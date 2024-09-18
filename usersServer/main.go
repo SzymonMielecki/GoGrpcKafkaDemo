@@ -22,7 +22,7 @@ func main() {
 	}
 	s := grpc.NewServer()
 	logic := logic.NewServer(db)
-	pb.RegisterUsersServiceServer(s, logic.UnimplementedUsersServiceServer)
+	pb.RegisterUsersServiceServer(s, logic)
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
