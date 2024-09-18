@@ -4,7 +4,9 @@ This is a chat app base on microservices architecture.
 
 ## Technologies used
 
--   Go
--   Docker
--   gRPC
--   Kafka
+-   [x] Go
+-   [x] Docker
+-   [x] gRPC
+-   [] Kafka
+-   [x] PostgresQl
+-   [x] gORM

@@ -1,0 +1,22 @@
+services:
+    db:
+        image: postgres
+        restart: always
+        environment:
+            POSTGRES_PASSWORD: chatAppPass
+        ports:
+            - "5432:5432"
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+
+    users_server:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "50051:50051"
+        depends_on:
+            - db
+
+volumes:
+    pgdata:
