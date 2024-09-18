@@ -4,14 +4,22 @@ option go_package = "github.com/SzymonMielecki/chatApp/usersService";
 
 package usersService;
 
+message User {
+    string id = 1;
+    string username = 2;
+    string email = 3;
+}
+
 service UsersService {
     rpc LoginUser(LoginUserRequest) returns (LoginUserResponse) {}
     rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse) {}
+    rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
+    rpc CheckUser(CheckUserRequest) returns (CheckUserResponse) {}
 }
 
 message LoginUserRequest {
     string username_or_email = 1;
-    string password = 2;
+    string password_hash = 2;
 }
 
 message LoginUserResponse {
@@ -22,11 +30,34 @@ message LoginUserResponse {
 
 message RegisterUserRequest {
     string username = 1;
-    string password = 2;
+    string password_hash = 2;
     string email = 3;
 }
 
 message RegisterUserResponse {
+    bool success = 1;
+    string id = 2;
+    string message = 3;
+}
+
+message GetUserRequest {
+    string id = 1;
+}
+
+message GetUserResponse {
+    bool success = 1;
+    string id = 2;
+    string message = 3;
+    User user = 4;
+}
+
+message CheckUserRequest {
+    string username = 1;
+    string email = 2;
+    string password_hash = 3;
+}
+
+message CheckUserResponse {
     bool success = 1;
     string id = 2;
     string message = 3;
