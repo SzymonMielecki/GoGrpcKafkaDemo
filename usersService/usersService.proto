@@ -24,7 +24,7 @@ message LoginUserRequest {
 
 message LoginUserResponse {
     bool success = 1;
-    uint32 id = 2;
+    User user = 2;
     string message = 3;
 }
 
@@ -36,7 +36,7 @@ message RegisterUserRequest {
 
 message RegisterUserResponse {
     bool success = 1;
-    uint32 id = 2;
+    User user = 2;
     string message = 3;
 }
 
@@ -46,9 +46,8 @@ message GetUserRequest {
 
 message GetUserResponse {
     bool success = 1;
-    uint32 id = 2;
+    User user = 2;
     string message = 3;
-    User user = 4;
 }
 
 message CheckUserRequest {
@@ -59,6 +58,6 @@ message CheckUserRequest {
 
 message CheckUserResponse {
     bool success = 1;
-    uint32 id = 2;
+    User user = 2;
     string message = 3;
 }

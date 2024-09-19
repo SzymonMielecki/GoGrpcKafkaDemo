@@ -38,6 +38,8 @@ func (s *Server) SendMessage(ctx context.Context, in *pb.SendMessageRequest) (*p
 		}, err
 	}
 
+	s.streaming.SendMessage(msg)
+
 	return &pb.SendMessageResponse{
 		Success:      true,
 		MessageId:    uint32(msg.ID),

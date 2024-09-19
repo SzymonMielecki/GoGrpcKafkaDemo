@@ -2,192 +2,65 @@ package cmd
 
 import (
 	"context"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 
+	"github.com/SzymonMielecki/chatApp/client/cmd/login"
+	"github.com/SzymonMielecki/chatApp/client/state"
+	"github.com/SzymonMielecki/chatApp/client/userServiceClient"
 	pb "github.com/SzymonMielecki/chatApp/usersService"
 
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
-	"crypto/sha256"
 )
-
-type LoginState struct {
-	LoggedIn     bool   `json:"logged_in"`
-	Id           uint   `json:"id"`
-	Username     string `json:"username"`
-	Email        string `json:"email"`
-	PasswordHash string `json:"password_hash"`
-}
-
-func (s *LoginState) Save() error {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-	stateFile := filepath.Join(homeDir, ".chatapp_session")
-	data, err := json.Marshal(s)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(stateFile, []byte(data), 0644)
-}
-
-func LoadState() (*LoginState, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-	stateFile := filepath.Join(homeDir, ".chatapp_session")
-	data, err := os.ReadFile(stateFile)
-
-	if err != nil {
-		return nil, err
-	}
-	s := &LoginState{}
-	err = json.Unmarshal(data, s)
-	if err != nil {
-		return nil, err
-	}
-
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer conn.Close()
-	c := pb.NewUsersServiceClient(conn)
-	response, err := c.CheckUser(context.Background(), &pb.CheckUserRequest{
-		Username:     s.Username,
-		Email:        s.Email,
-		PasswordHash: s.PasswordHash,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if response.Success {
-		s.LoggedIn = true
-		s.Id = uint(response.Id)
-	}
-	return nil, fmt.Errorf("invalid credentials")
-}
 
 var rootCmd = &cobra.Command{
 	Use:   "chatApp",
 	Short: "ChatApp is a chat application",
 	Long:  `ChatApp is a chat application`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Root command")
-	},
-}
-
-var loginCmd = &cobra.Command{
-	Use:   "login",
-	Short: "Login to the chat application",
-	Long:  `Login to the chat application`,
-	Run: func(cmd *cobra.Command, args []string) {
-		username, _ := cmd.Flags().GetString("username")
-		email, _ := cmd.Flags().GetString("email")
-		password, _ := cmd.Flags().GetString("password")
-		hasher := sha256.New()
-		hasher.Write([]byte(password))
-		passwordHash := hex.EncodeToString(hasher.Sum(nil))
-		usernameOrEmail := username
-		if usernameOrEmail == "" {
-			usernameOrEmail = email
-		}
-		user := &pb.LoginUserRequest{
-			UsernameOrEmail: usernameOrEmail,
-			PasswordHash:    passwordHash,
-		}
-		conn, err := grpc.NewClient("usersServer:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			conn, err = grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-		}
-		defer conn.Close()
-		c := pb.NewUsersServiceClient(conn)
-		response, err := c.LoginUser(context.Background(), user)
+		state, err := state.LoadState()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		state := &LoginState{
-			LoggedIn:     response.Success,
-			Id:           uint(response.Id),
-			Username:     username,
-			Email:        email,
-			PasswordHash: passwordHash,
-		}
-		state.Save()
-	},
-}
-
-var registerCmd = &cobra.Command{
-	Use:   "register",
-	Short: "Register to the chat application",
-	Long:  `Register to the chat application`,
-	Run: func(cmd *cobra.Command, args []string) {
-		conn, err := grpc.NewClient("usersServer:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			conn, err = grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-		}
-		defer conn.Close()
-		c := pb.NewUsersServiceClient(conn)
-		username, _ := cmd.Flags().GetString("username")
-		email, _ := cmd.Flags().GetString("email")
-		password, _ := cmd.Flags().GetString("password")
-		hasher := sha256.New()
-		hasher.Write([]byte(password))
-		passwordHash := hex.EncodeToString(hasher.Sum(nil))
-		user := &pb.RegisterUserRequest{
-			Username:     username,
-			Email:        email,
-			PasswordHash: passwordHash,
-		}
-		response, err := c.RegisterUser(context.Background(), user)
+		userServiceClient, err := userServiceClient.NewUserServiceClient()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		state := &LoginState{
-			LoggedIn:     response.Success,
-			Id:           uint(response.Id),
-			Username:     username,
-			Email:        email,
-			PasswordHash: passwordHash,
+		defer userServiceClient.Close()
+		response, err := userServiceClient.CheckUser(context.Background(), &pb.CheckUserRequest{
+			Username:     state.Username,
+			Email:        state.Email,
+			PasswordHash: state.PasswordHash,
+		})
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
-		state.Save()
+		if !response.Success {
+			fmt.Println("Not logged in")
+			os.Exit(1)
+		}
+		fmt.Println("Logged in as", state.Username)
 	},
 }
 
 func Execute() {
-	registerCmd.Flags().StringP("username", "u", "", "Username")
-	registerCmd.MarkFlagRequired("username")
-	registerCmd.Flags().StringP("email", "e", "", "Email")
-	registerCmd.MarkFlagRequired("email")
-	registerCmd.Flags().StringP("password", "p", "", "Password")
-	registerCmd.MarkFlagRequired("password")
-	rootCmd.AddCommand(registerCmd)
+	login.LoginCmd.Flags().StringP("username", "u", "", "Username")
+	login.LoginCmd.MarkFlagRequired("username")
+	login.LoginCmd.Flags().StringP("email", "e", "", "Email")
+	login.RegisterCmd.MarkFlagRequired("email")
+	login.RegisterCmd.Flags().StringP("password", "p", "", "Password")
+	login.RegisterCmd.MarkFlagRequired("password")
+	rootCmd.AddCommand(login.RegisterCmd)
 
-	loginCmd.Flags().StringP("username", "u", "", "Username")
-	loginCmd.Flags().StringP("email", "e", "", "Email")
-	loginCmd.MarkFlagsOneRequired("username", "email")
-	loginCmd.Flags().StringP("password", "p", "", "Password")
-	loginCmd.MarkFlagRequired("password")
-	rootCmd.AddCommand(loginCmd)
+	login.LoginCmd.Flags().StringP("username", "u", "", "Username")
+	login.LoginCmd.Flags().StringP("email", "e", "", "Email")
+	login.LoginCmd.MarkFlagsOneRequired("username", "email")
+	login.LoginCmd.Flags().StringP("password", "p", "", "Password")
+	login.LoginCmd.MarkFlagRequired("password")
+	rootCmd.AddCommand(login.LoginCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

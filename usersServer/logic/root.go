@@ -23,21 +23,21 @@ func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.Lo
 	if found.Model.ID == 0 {
 		return &pb.LoginUserResponse{
 			Success: false,
-			Id:      0,
 			Message: "User not found",
+			User:    &pb.User{},
 		}, nil
 	}
 	if found.PasswordHash != in.PasswordHash {
 		return &pb.LoginUserResponse{
 			Success: false,
-			Id:      0,
 			Message: "Incorrect password",
+			User:    &pb.User{},
 		}, nil
 	}
 	return &pb.LoginUserResponse{
 		Success: true,
-		Id:      uint32(found.Model.ID),
 		Message: "Logged in",
+		User:    found.ToProto(),
 	}, nil
 }
 
@@ -46,14 +46,14 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 	if err != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      0,
+			User:    &pb.User{},
 			Message: "Username already exists",
 		}, nil
 	}
 	if found_username.ID != 0 {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      0,
+			User:    &pb.User{},
 			Message: "Username already exists",
 		}, nil
 	}
@@ -61,14 +61,14 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 	if err != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      0,
+			User:    &pb.User{},
 			Message: "Email already exists",
 		}, nil
 	}
 	if found_email.ID != 0 {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      0,
+			User:    &pb.User{},
 			Message: "Email already exists",
 		}, nil
 	}
@@ -81,13 +81,13 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 	if err != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      0,
+			User:    &pb.User{},
 			Message: "Failed to register",
 		}, err
 	}
 	return &pb.RegisterUserResponse{
 		Success: true,
-		Id:      uint32(user.Model.ID),
+		User:    user.ToProto(),
 		Message: "Registered",
 	}, nil
 }
@@ -113,20 +113,20 @@ func (s *Server) CheckUser(ctx context.Context, in *pb.CheckUserRequest) (*pb.Ch
 	if err != nil {
 		return &pb.CheckUserResponse{
 			Success: false,
-			Id:      0,
+			User:    &pb.User{},
 			Message: "User not found",
 		}, err
 	}
 	if user.PasswordHash != in.PasswordHash {
 		return &pb.CheckUserResponse{
 			Success: false,
-			Id:      0,
+			User:    &pb.User{},
 			Message: "Incorrect password",
 		}, nil
 	}
 	return &pb.CheckUserResponse{
 		Success: true,
-		Id:      uint32(user.ID),
+		User:    user.ToProto(),
 		Message: "User found",
 	}, nil
 }
