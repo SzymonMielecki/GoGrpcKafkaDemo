@@ -34,43 +34,47 @@ func (s *LoginState) Save() error {
 	return os.WriteFile(stateFile, []byte(data), 0644)
 }
 
-func LoadState() (*LoginState, error) {
+func LoadState(ctx context.Context) (*LoginState, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
 	stateFile := filepath.Join(homeDir, ".chatapp_session")
 	data, err := os.ReadFile(stateFile)
-
 	if err != nil {
 		return nil, err
 	}
+
 	s := &LoginState{}
 	err = json.Unmarshal(data, s)
 	if err != nil {
 		return nil, err
 	}
 
-	conn, err := grpc.NewClient("chat_server:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
 	}
 	defer conn.Close()
 	c := pb.NewUsersServiceClient(conn)
-	response, err := c.CheckUser(context.Background(), &pb.CheckUserRequest{
+	response, err := c.CheckUser(ctx, &pb.CheckUserRequest{
 		Username:     s.Username,
 		Email:        s.Email,
 		PasswordHash: s.PasswordHash,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to check user in loginState/root.go: \n%v", err)
 	}
 	if response.Success {
 		s.LoggedIn = true
 		s.Id = uint(response.User.Id)
+		s.Username = response.User.Username
+		s.Email = response.User.Email
+		return s, nil
 	}
-	return nil, fmt.Errorf("invalid credentials")
+	fmt.Println("User not found")
+	return nil, fmt.Errorf("user not found")
 }
 
 func NewLoginState(

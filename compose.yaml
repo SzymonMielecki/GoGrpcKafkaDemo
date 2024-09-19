@@ -15,7 +15,7 @@ services:
         restart: always
         build:
             context: .
-            dockerfile: Dockerfile_usersServer
+            dockerfile: user_server.Dockerfile
         ports:
             - "50051:50051"
         environment:
@@ -66,7 +66,7 @@ services:
         restart: always
         build:
             context: .
-            dockerfile: Dockerfile_chatServer
+            dockerfile: chat_server.Dockerfile
         environment:
             DB_HOST: chat_db
             DB_PORT: 5432

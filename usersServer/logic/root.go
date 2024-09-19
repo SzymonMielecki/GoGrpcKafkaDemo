@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/SzymonMielecki/chatApp/types"
 	"github.com/SzymonMielecki/chatApp/usersServer/persistance"
@@ -19,48 +18,52 @@ func NewServer(db *persistance.DB) *Server {
 }
 
 func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
-	var found types.User
-	err := s.db.Find(&types.User{Username: in.UsernameOrEmail}).Or(&types.User{Email: in.UsernameOrEmail}).First(&found).Error
-	if err != nil {
-		return &pb.LoginUserResponse{}, err
-	}
-	if found.Model.ID == 0 {
+	found_username, username_err := s.db.GetUserByUsername(in.Username)
+	found_email, email_err := s.db.GetUserByEmail(in.Email)
+	if username_err != nil && email_err != nil {
 		return &pb.LoginUserResponse{
 			Success: false,
-			Message: "User not found",
 			User:    &pb.User{},
+			Message: "User not found",
 		}, nil
 	}
-	if found.PasswordHash != in.PasswordHash {
+	if found_username != nil {
 		return &pb.LoginUserResponse{
-			Success: false,
-			Message: "Incorrect password",
-			User:    &pb.User{},
+			Success: true,
+			User:    found_username.ToProto(),
+			Message: "Logged in as " + found_username.Username,
+		}, nil
+	}
+	if found_email != nil {
+		return &pb.LoginUserResponse{
+			Success: true,
+			User:    found_email.ToProto(),
+			Message: "Logged in as " + found_email.Username,
 		}, nil
 	}
 	return &pb.LoginUserResponse{
-		Success: true,
-		Message: "Logged in",
-		User:    found.ToProto(),
+		Success: false,
+		User:    &pb.User{},
+		Message: "User not found",
 	}, nil
 }
 
 func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
-	username_exists := s.db.UsernameExists(in.Username)
-	if username_exists {
+	user_from_username, _ := s.db.GetUserByUsername(in.Username)
+	if user_from_username != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
 			Message: "Username already exists",
-		}, fmt.Errorf("username already exists")
+		}, nil
 	}
-	email_exists := s.db.EmailExists(in.Email)
-	if email_exists {
+	user_from_email, _ := s.db.GetUserByEmail(in.Email)
+	if user_from_email != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
 			Message: "Email already exists",
-		}, fmt.Errorf("email already exists")
+		}, nil
 	}
 	user, err := s.db.CreateUser(&types.User{
 		Username:     in.Username,
@@ -71,8 +74,8 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
-			Message: "Error creating user",
-		}, fmt.Errorf("error creating user: %w", err)
+			Message: "Error creating user, " + err.Error(),
+		}, nil
 	}
 	return &pb.RegisterUserResponse{
 		Success: true,
@@ -98,13 +101,13 @@ func (s *Server) GetUser(ctx context.Context, in *pb.GetUserRequest) (*pb.GetUse
 }
 
 func (s *Server) CheckUser(ctx context.Context, in *pb.CheckUserRequest) (*pb.CheckUserResponse, error) {
-	user, err := s.db.GetUserByUsername(in.Username)
+	user, err := s.db.GetUserByUsernameAndEmail(in.Username, in.Email)
 	if err != nil {
 		return &pb.CheckUserResponse{
 			Success: false,
 			User:    &pb.User{},
-			Message: "User not found",
-		}, err
+			Message: "User not found, error: " + err.Error(),
+		}, nil
 	}
 	if user.PasswordHash != in.PasswordHash {
 		return &pb.CheckUserResponse{

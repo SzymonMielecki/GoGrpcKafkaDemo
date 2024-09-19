@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 
 	"github.com/SzymonMielecki/chatApp/chatServer/logic"
 	"github.com/SzymonMielecki/chatApp/chatServer/persistance"
-	"github.com/SzymonMielecki/chatApp/streaming"
+	"github.com/SzymonMielecki/chatApp/streaming/consumer"
 )
 
 func main() {
@@ -19,19 +18,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to database in chatServer/main.go: \n%v", err)
 	}
-	broker := os.Getenv("KAFKA_BROKER")
-	streaming, err := streaming.NewStreaming(ctx, broker, "chat", 0, []string{broker})
+	streaming, err := consumer.NewStreamingConsumer(ctx, "chat", 0, []string{"kafka:9092", "localhost:9092"})
 	if err != nil {
 		log.Fatalf("failed to create streaming in chatServer/main.go: \n%v", err)
 	}
 	defer streaming.Close()
 	logic := logic.NewServer(db, streaming)
 	defer logic.Close()
-	var wg sync.WaitGroup
-	wg.Add(1)
 	log.Default().Println("Starting chat server")
-	go logic.UploadMessages(ctx, &wg)
-	wg.Wait()
+	logic.UploadMessages(ctx)
 }
 
 func handleDbConnection() (*persistance.DB, error) {

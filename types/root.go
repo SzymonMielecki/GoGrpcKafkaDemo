@@ -14,9 +14,10 @@ type User struct {
 
 func (u *User) ToProto() *pb.User {
 	return &pb.User{
-		Id:       uint32(u.Model.ID),
-		Username: u.Username,
-		Email:    u.Email,
+		Id:           uint32(u.Model.ID),
+		Username:     u.Username,
+		Email:        u.Email,
+		PasswordHash: u.PasswordHash,
 	}
 }
 

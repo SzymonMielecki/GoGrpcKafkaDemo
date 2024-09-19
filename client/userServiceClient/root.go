@@ -28,7 +28,11 @@ func (c *Client) Close() {
 }
 
 func (c *Client) LoginUser(ctx context.Context, user *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
-	return c.UsersServiceClient.LoginUser(ctx, user)
+	r, err := c.UsersServiceClient.LoginUser(ctx, user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to login user in userServiceClient/root.go: \n%v", err)
+	}
+	return r, nil
 }
 
 func (c *Client) RegisterUser(ctx context.Context, user *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
@@ -42,5 +46,9 @@ func (c *Client) GetUser(ctx context.Context, user *pb.GetUserRequest) (*pb.GetU
 	return c.UsersServiceClient.GetUser(ctx, user)
 }
 func (c *Client) CheckUser(ctx context.Context, user *pb.CheckUserRequest) (*pb.CheckUserResponse, error) {
-	return c.UsersServiceClient.CheckUser(ctx, user)
+	r, err := c.UsersServiceClient.CheckUser(ctx, user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check user in userServiceClient/root.go: \n%v", err)
+	}
+	return r, nil
 }

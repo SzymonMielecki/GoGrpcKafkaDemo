@@ -10,7 +10,8 @@ import (
 
 	"github.com/SzymonMielecki/chatApp/client/loginState"
 	"github.com/SzymonMielecki/chatApp/client/userServiceClient"
-	"github.com/SzymonMielecki/chatApp/streaming"
+	"github.com/SzymonMielecki/chatApp/streaming/consumer"
+	"github.com/SzymonMielecki/chatApp/streaming/producer"
 	"github.com/SzymonMielecki/chatApp/types"
 	pb "github.com/SzymonMielecki/chatApp/usersService"
 
@@ -22,7 +23,20 @@ var rootCmd = &cobra.Command{
 	Short: "ChatApp is a chat application",
 	Long:  `ChatApp is a chat application`,
 	Run: func(cmd *cobra.Command, args []string) {
-		readerCmd.Run(cmd, args)
+		ctx, cancel := context.WithCancel(context.Background())
+		state, err := loginState.LoadState(ctx)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println("Welcome to ChatApp!")
+		fmt.Println("You are logged in as", state.Username)
+		fmt.Println("You can use the following commands:")
+		fmt.Println("reader - reads messages from the chat")
+		fmt.Println("writer - writes messages to the chat")
+		fmt.Println("login - logs you in")
+		fmt.Println("register - registers you to the chat")
+		cancel()
 	},
 }
 
@@ -32,42 +46,50 @@ var readerCmd = &cobra.Command{
 	Long:  `Reader is a command that reads messages from the chat`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(context.Background())
-		state, err := loginState.LoadState()
+		state, err := loginState.LoadState(ctx)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fmt.Println("Error loading state in client/main.go: \n", err)
+			cancel()
+			return
 		}
 		userServiceClient, err := userServiceClient.NewUserServiceClient()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fmt.Println("Error creating user service client in client/main.go: \n", err)
+			cancel()
+			return
 		}
 		defer userServiceClient.Close()
-		response, err := userServiceClient.CheckUser(context.Background(), &pb.CheckUserRequest{
+		response, err := userServiceClient.CheckUser(ctx, &pb.CheckUserRequest{
 			Username:     state.Username,
 			Email:        state.Email,
 			PasswordHash: state.PasswordHash,
 		})
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fmt.Println("Error checking user in client/main.go: \n", err)
+			cancel()
+			return
 		}
 		if !response.Success {
 			fmt.Println("Not logged in")
-			os.Exit(1)
+			cancel()
+			return
 		}
 		fmt.Println("Logged in as", state.Username)
-		broker := os.Getenv("KAFKA_BROKER")
-		streaming, err := streaming.NewStreaming(ctx, broker, "chat", 0, []string{broker})
+		streaming, err := consumer.NewStreamingConsumer(ctx, "localhost:9092", 0, []string{"localhost:9092"})
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			cancel()
+			return
 		}
 		defer streaming.Close()
 		ch := make(chan *types.Message)
 		var wg sync.WaitGroup
+
 		wg.Add(1)
-		go streaming.ReceiveMessages(context.Background(), ch, &wg)
+		fmt.Println("Starting to receive messages")
+		go streaming.ReceiveMessages(ctx, ch, &wg)
+
+		wg.Add(1)
+		fmt.Println("Starting to print messages")
 		go func() {
 			for {
 				select {
@@ -89,10 +111,9 @@ var writerCmd = &cobra.Command{
 	Use:   "writer",
 	Short: "Writer is a command that writes messages to the chat",
 	Long:  `Writer is a command that writes messages to the chat`,
-	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(context.Background())
-		state, err := loginState.LoadState()
+		state, err := loginState.LoadState(ctx)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -103,7 +124,7 @@ var writerCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		defer userServiceClient.Close()
-		response, err := userServiceClient.CheckUser(context.Background(), &pb.CheckUserRequest{
+		response, err := userServiceClient.CheckUser(ctx, &pb.CheckUserRequest{
 			Username:     state.Username,
 			Email:        state.Email,
 			PasswordHash: state.PasswordHash,
@@ -118,8 +139,7 @@ var writerCmd = &cobra.Command{
 		}
 		fmt.Println("Logged in as", state.Username)
 
-		broker := os.Getenv("KAFKA_BROKER")
-		streaming, err := streaming.NewStreaming(ctx, broker, "chat", 0, []string{broker})
+		streaming, err := producer.NewStreamingProducer(ctx, "localhost:9092", 0, []string{"localhost:9092"})
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -138,36 +158,34 @@ var LoginCmd = &cobra.Command{
 	Short: "Login to the chat application",
 	Long:  `Login to the chat application`,
 	Run: func(cmd *cobra.Command, args []string) {
-		hasher := sha256.New()
-		hasher.Write([]byte(password))
-		passwordHash := hex.EncodeToString(hasher.Sum(nil))
-		usernameOrEmail := username
-		if usernameOrEmail == "" {
-			usernameOrEmail = email
-		}
-		user := &pb.LoginUserRequest{
-			UsernameOrEmail: usernameOrEmail,
-			PasswordHash:    passwordHash,
-		}
 		client, err := userServiceClient.NewUserServiceClient()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 		defer client.Close()
-		response, err := client.LoginUser(context.Background(), user)
+		hasher := sha256.New()
+		hasher.Write([]byte(password))
+		passwordHash := hex.EncodeToString(hasher.Sum(nil))
+		user := &pb.LoginUserRequest{
+			Username:     username,
+			Email:        email,
+			PasswordHash: passwordHash,
+		}
+		login_response, err := client.LoginUser(context.Background(), user)
 		if err != nil {
 			fmt.Println(err)
-			os.Exit(1)
+			return
 		}
-		state := loginState.NewLoginState(
-			response.Success,
-			uint(response.User.Id),
-			username,
-			email,
-			passwordHash,
+		login_state := loginState.NewLoginState(
+			login_response.Success,
+			uint(login_response.User.Id),
+			login_response.User.Username,
+			login_response.User.Email,
+			login_response.User.PasswordHash,
 		)
-		state.Save()
+		login_state.Save()
+		fmt.Println(login_response.Message)
 	},
 }
 
@@ -239,6 +257,7 @@ func Execute() {
 	rootCmd.AddCommand(LoginCmd)
 	rootCmd.AddCommand(RegisterCmd)
 	rootCmd.AddCommand(writerCmd)
+	rootCmd.AddCommand(readerCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

@@ -47,7 +47,7 @@ func (db *DB) GetUserById(id uint) (*types.User, error) {
 
 func (db *DB) GetUserByEmail(email string) (*types.User, error) {
 	var user types.User
-	err := db.DB.Model(&types.User{Email: email}).First(&user).Error
+	err := db.DB.Model(&types.User{}).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,16 @@ func (db *DB) GetUserByEmail(email string) (*types.User, error) {
 
 func (db *DB) GetUserByUsername(username string) (*types.User, error) {
 	var user types.User
-	err := db.DB.Model(&types.User{Username: username}).First(&user).Error
+	err := db.DB.Model(&types.User{}).Where("username = ?", username).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (db *DB) GetUserByUsernameAndEmail(username, email string) (*types.User, error) {
+	var user types.User
+	err := db.DB.Model(&types.User{}).Where("username = ? AND email = ?", username, email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -64,19 +73,13 @@ func (db *DB) GetUserByUsername(username string) (*types.User, error) {
 }
 
 func (db *DB) UsernameExists(username string) bool {
-	var count int64
-	err := db.DB.Model(&types.User{}).Where("username = ?", username).Count(&count).Error
-	if err != nil {
-		return false
-	}
-	return count > 0
+	var user types.User
+	err := db.DB.Model(&types.User{}).Where("username = ?", username).First(&user).Error
+	return err == nil
 }
 
 func (db *DB) EmailExists(email string) bool {
-	var count int64
-	err := db.DB.Model(&types.User{}).Where("email = ?", email).Count(&count).Error
-	if err != nil {
-		return false
-	}
-	return count > 0
+	var user types.User
+	err := db.DB.Model(&types.User{}).Where("email = ?", email).First(&user).Error
+	return err == nil
 }
