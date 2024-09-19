@@ -1,35 +1,31 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
-	"net"
+	"sync"
 
 	"github.com/SzymonMielecki/chatApp/chatServer/logic"
 	"github.com/SzymonMielecki/chatApp/chatServer/persistance"
-	"github.com/SzymonMielecki/chatApp/chatServer/streaming"
-	pb "github.com/SzymonMielecki/chatApp/chatService"
-	"google.golang.org/grpc"
+	"github.com/SzymonMielecki/chatApp/streaming"
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	db, err := handleDbConnection()
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
-	lis, err := net.Listen("tcp", ":50052")
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
 	streaming := streaming.NewStreaming("chat", 0)
-	s := grpc.NewServer()
 	logic := logic.NewServer(db, streaming)
 	defer logic.Close()
-	pb.RegisterChatServiceServer(s, logic)
-	log.Printf("server listening at %v", lis.Addr())
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go logic.UploadMessages(ctx, &wg)
+	wg.Wait()
+
 }
 func handleDbConnection() (*persistance.DB, error) {
 	db, err := persistance.NewDB(

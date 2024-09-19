@@ -1,4 +1,4 @@
-package login
+package cmd
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	pb "github.com/SzymonMielecki/chatApp/usersService"
 
-	"github.com/SzymonMielecki/chatApp/client/state"
+	"github.com/SzymonMielecki/chatApp/client/loginState"
 	"github.com/SzymonMielecki/chatApp/client/userServiceClient"
 	"github.com/spf13/cobra"
 )
@@ -44,13 +44,13 @@ var LoginCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		state := &state.LoginState{
-			LoggedIn:     response.Success,
-			Id:           uint(response.User.Id),
-			Username:     username,
-			Email:        email,
-			PasswordHash: passwordHash,
-		}
+		state := loginState.NewLoginState(
+			response.Success,
+			uint(response.User.Id),
+			username,
+			email,
+			passwordHash,
+		)
 		state.Save()
 	},
 }
@@ -82,13 +82,13 @@ var RegisterCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		state := &state.LoginState{
-			LoggedIn:     response.Success,
-			Id:           uint(response.User.Id),
-			Username:     username,
-			Email:        email,
-			PasswordHash: passwordHash,
-		}
+		state := loginState.NewLoginState(
+			response.Success,
+			uint(response.User.Id),
+			username,
+			email,
+			passwordHash,
+		)
 		state.Save()
 	},
 }

@@ -1,4 +1,4 @@
-package state
+package loginState
 
 import (
 	"context"
@@ -71,4 +71,20 @@ func LoadState() (*LoginState, error) {
 		s.Id = uint(response.User.Id)
 	}
 	return nil, fmt.Errorf("invalid credentials")
+}
+
+func NewLoginState(
+	success bool,
+	id uint,
+	username string,
+	email string,
+	passwordHash string,
+) *LoginState {
+	return &LoginState{
+		LoggedIn:     success,
+		Id:           id,
+		Username:     username,
+		Email:        email,
+		PasswordHash: passwordHash,
+	}
 }
