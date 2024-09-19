@@ -19,13 +19,12 @@ type Streaming struct {
 	brokers   []string
 }
 
-func NewStreaming(host string, topic string, partition int) *Streaming {
-	conn, err := kafka.DialLeader(context.Background(), "tcp", host+":9092", topic, partition)
+func NewStreaming(ctx context.Context, host string, topic string, partition int, brokers []string) (*Streaming, error) {
+	conn, err := kafka.DialLeader(ctx, "tcp", host, topic, partition)
 	if err != nil {
-		conn, err = kafka.DialLeader(context.Background(), "tcp", "localhost:9092", topic, partition)
-		log.Fatal("failed to dial leader:", err)
+		return nil, err
 	}
-	return &Streaming{conn: conn, topic: topic, partition: partition}
+	return &Streaming{conn: conn, topic: topic, partition: partition, brokers: brokers}, nil
 }
 
 func (s *Streaming) Close() {

@@ -3,7 +3,6 @@ package userServiceClient
 import (
 	"context"
 	"fmt"
-	"os"
 
 	pb "github.com/SzymonMielecki/chatApp/usersService"
 
@@ -11,45 +10,37 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type UserServiceClient struct {
-	conn   *grpc.ClientConn
-	client pb.UsersServiceClient
+type Client struct {
+	pb.UsersServiceClient
+	conn *grpc.ClientConn
 }
 
-func NewUserServiceClient() (*UserServiceClient, error) {
-	conn, err := newUsersConn()
+func NewUserServiceClient() (*Client, error) {
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to users_server in userServiceClient/root.go: \n%v", err)
 	}
-	return &UserServiceClient{conn: conn, client: pb.NewUsersServiceClient(conn)}, nil
+	c := pb.NewUsersServiceClient(conn)
+	return &Client{conn: conn, UsersServiceClient: c}, nil
 }
-func (c *UserServiceClient) Close() {
+func (c *Client) Close() {
 	c.conn.Close()
 }
 
-func newUsersConn() (*grpc.ClientConn, error) {
-	conn, err := grpc.NewClient("usersServer:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (c *Client) LoginUser(ctx context.Context, user *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
+	return c.UsersServiceClient.LoginUser(ctx, user)
+}
+
+func (c *Client) RegisterUser(ctx context.Context, user *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
+	r, err := c.UsersServiceClient.RegisterUser(ctx, user)
 	if err != nil {
-		conn, err = grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		return nil, fmt.Errorf("failed to register user in userServiceClient/root.go: \n%v", err)
 	}
-	return conn, nil
+	return r, nil
 }
-
-func (c *UserServiceClient) LoginUser(ctx context.Context, user *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
-	return c.client.LoginUser(ctx, user)
+func (c *Client) GetUser(ctx context.Context, user *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+	return c.UsersServiceClient.GetUser(ctx, user)
 }
-
-func (c *UserServiceClient) RegisterUser(ctx context.Context, user *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
-	return c.client.RegisterUser(ctx, user)
-}
-
-func (c *UserServiceClient) GetUser(ctx context.Context, user *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	return c.client.GetUser(ctx, user)
-}
-func (c *UserServiceClient) CheckUser(ctx context.Context, user *pb.CheckUserRequest) (*pb.CheckUserResponse, error) {
-	return c.client.CheckUser(ctx, user)
+func (c *Client) CheckUser(ctx context.Context, user *pb.CheckUserRequest) (*pb.CheckUserResponse, error) {
+	return c.UsersServiceClient.CheckUser(ctx, user)
 }

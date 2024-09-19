@@ -57,8 +57,12 @@ var readerCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		fmt.Println("Logged in as", state.Username)
-
-		streaming := streaming.NewStreaming("kafka", "chat", 0)
+		broker := os.Getenv("KAFKA_BROKER")
+		streaming, err := streaming.NewStreaming(ctx, broker, "chat", 0, []string{broker})
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		defer streaming.Close()
 		ch := make(chan *types.Message)
 		var wg sync.WaitGroup
@@ -114,12 +118,13 @@ var writerCmd = &cobra.Command{
 		}
 		fmt.Println("Logged in as", state.Username)
 
-		streaming := streaming.NewStreaming("kafka", "chat", 0)
-		defer streaming.Close()
+		broker := os.Getenv("KAFKA_BROKER")
+		streaming, err := streaming.NewStreaming(ctx, broker, "chat", 0, []string{broker})
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		defer streaming.Close()
 		streaming.SendMessage(ctx, &types.Message{
 			Content:  message,
 			SenderID: state.Id,
@@ -172,14 +177,15 @@ var RegisterCmd = &cobra.Command{
 	Long:  `Register to the chat application`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		client, err := userServiceClient.NewUserServiceClient()
 		if err != nil {
-			fmt.Println(err)
-			cancel()
+			fmt.Printf("create user in client/main.go: \n%v", err)
 			os.Exit(1)
-			return
 		}
 		defer client.Close()
+
 		hasher := sha256.New()
 		hasher.Write([]byte(password))
 		passwordHash := hex.EncodeToString(hasher.Sum(nil))
@@ -190,11 +196,8 @@ var RegisterCmd = &cobra.Command{
 		}
 		response, err := client.RegisterUser(ctx, user)
 		if err != nil {
-			fmt.Println(response)
-			fmt.Println(err)
-			cancel()
+			fmt.Printf("Failed to register user in client/main.go: \n%v", err)
 			os.Exit(1)
-			return
 		}
 		state := loginState.NewLoginState(
 			response.Success,
@@ -203,8 +206,7 @@ var RegisterCmd = &cobra.Command{
 			email,
 			passwordHash,
 		)
-		state.Save()
-		cancel()
+		defer state.Save()
 	},
 }
 

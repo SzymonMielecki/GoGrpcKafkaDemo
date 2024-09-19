@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SzymonMielecki/chatApp/types"
 	"github.com/SzymonMielecki/chatApp/usersServer/persistance"
@@ -47,25 +48,33 @@ func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.Lo
 func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
 	found_username, err := s.db.GetUserByUsername(in.Username)
 	if err != nil {
-		return &pb.RegisterUserResponse{}, err
+		return &pb.RegisterUserResponse{
+			Success: false,
+			User:    &pb.User{},
+			Message: "Error getting user by username",
+		}, fmt.Errorf("error getting user by username: %w", err)
 	}
 	if found_username.ID != 0 {
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
 			Message: "Username already exists",
-		}, nil
+		}, fmt.Errorf("username already exists: %w", err)
 	}
 	found_email, err := s.db.GetUserByEmail(in.Email)
 	if err != nil {
-		return &pb.RegisterUserResponse{}, err
+		return &pb.RegisterUserResponse{
+			Success: false,
+			User:    &pb.User{},
+			Message: "Error getting user by email",
+		}, fmt.Errorf("error getting user by email: %w", err)
 	}
 	if found_email.ID != 0 {
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
 			Message: "Email already exists",
-		}, nil
+		}, fmt.Errorf("email already exists: %w", err)
 	}
 	user := types.User{
 		Username:     in.Username,
@@ -74,7 +83,11 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 	}
 	err = s.db.CreateUser(&user)
 	if err != nil {
-		return &pb.RegisterUserResponse{}, err
+		return &pb.RegisterUserResponse{
+			Success: false,
+			User:    &pb.User{},
+			Message: "Error creating user",
+		}, fmt.Errorf("error creating user: %w", err)
 	}
 	return &pb.RegisterUserResponse{
 		Success: true,

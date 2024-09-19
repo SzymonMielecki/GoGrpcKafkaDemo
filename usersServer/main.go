@@ -15,18 +15,20 @@ import (
 func main() {
 	db, err := handleDbConnection()
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatalf("failed to connect to database in usersServer/main.go: \n%v", err)
 	}
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatalf("failed to listen in usersServer/main.go: \n%v", err)
 	}
+	log.Printf("Server listening on port 50051")
+
 	s := grpc.NewServer()
 	logic := logic.NewServer(db)
 	pb.RegisterUsersServiceServer(s, logic)
-	log.Printf("server listening at %v", lis.Addr())
+	log.Printf("Server registered and ready to serve")
 	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		log.Fatalf("failed to serve in usersServer/main.go: \n%v", err)
 	}
 
 }

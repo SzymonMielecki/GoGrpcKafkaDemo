@@ -17,14 +17,19 @@ func main() {
 	defer cancel()
 	db, err := handleDbConnection()
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatalf("failed to connect to database in chatServer/main.go: \n%v", err)
 	}
-	streaming := streaming.NewStreaming("kafka", "chat", 0)
+	broker := os.Getenv("KAFKA_BROKER")
+	streaming, err := streaming.NewStreaming(ctx, broker, "chat", 0, []string{broker})
+	if err != nil {
+		log.Fatalf("failed to create streaming in chatServer/main.go: \n%v", err)
+	}
+	defer streaming.Close()
 	logic := logic.NewServer(db, streaming)
 	defer logic.Close()
 	var wg sync.WaitGroup
 	wg.Add(1)
-	fmt.Println("Starting chat server")
+	log.Default().Println("Starting chat server")
 	go logic.UploadMessages(ctx, &wg)
 	wg.Wait()
 }

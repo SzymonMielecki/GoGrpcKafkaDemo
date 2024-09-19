@@ -1,22 +1,16 @@
 services:
     users_db:
-        image: postgres
+        image: postgres:latest
         restart: always
         environment:
             POSTGRES_PASSWORD: chatAppPass
             POSTGRES_USER: postgres
             POSTGRES_DB: postgres
-        ports:
-            - "5432:5432"
         volumes:
             - pgdata_users:/var/lib/postgresql/data
-        healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U postgres"]
-            interval: 5s
-            timeout: 5s
-            retries: 5
 
     users_server:
+        restart: always
         build:
             context: .
             dockerfile: Dockerfile_usersServer
@@ -29,65 +23,58 @@ services:
             DB_PASSWORD: chatAppPass
             DB_NAME: postgres
         depends_on:
-            users_db:
-                condition: service_healthy
+            - users_db
+
+    zookeeper:
+        restart: always
+        image: confluentinc/cp-zookeeper:latest
+        environment:
+            ZOOKEEPER_CLIENT_PORT: 2181
+            ZOOKEEPER_TICK_TIME: 2000
+        ports:
+            - 2181:2181
 
     kafka:
-        image: apache/kafka:latest
-        container_name: broker
-        environment:
-            KAFKA_NODE_ID: 1
-            KAFKA_PROCESS_ROLES: broker,controller
-            KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-            KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-            KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-            KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-            KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-            KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-            KAFKA_NUM_PARTITIONS: 3
+        restart: always
+        image: confluentinc/cp-kafka:latest
         ports:
-            - "9092:9092"
+            - 9092:9092
+            - 29092:29092
+        depends_on:
+            - zookeeper
+        environment:
+            KAFKA_BROKER_ID: 1
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
     chat_db:
-        image: postgres:16
+        image: postgres:latest
         restart: always
         environment:
-            POSTGRES_DB: chatAppDb
-            POSTGRES_USER: chatAppUser
             POSTGRES_PASSWORD: chatAppPass
-            POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-            - "5433:5433"
+            POSTGRES_USER: postgres
+            POSTGRES_DB: postgres
         volumes:
             - pgdata_chat:/var/lib/postgresql/data
-        command: -p 5433
-        healthcheck:
-            test:
-                ["CMD-SHELL", "pg_isready -U chatAppUser -d chatAppDb -p 5433"]
-            interval: 5s
-            timeout: 5s
-            retries: 5
 
     chat_server:
+        restart: always
         build:
             context: .
             dockerfile: Dockerfile_chatServer
-        ports:
-            - "50052:50052"
         environment:
             DB_HOST: chat_db
-            DB_PORT: 5433
-            DB_USER: chatAppUser
+            DB_PORT: 5432
+            DB_USER: postgres
             DB_PASSWORD: chatAppPass
-            DB_NAME: chatAppDb
+            DB_NAME: postgres
+            KAFKA_BROKER: kafka:9092
         depends_on:
-            chat_db:
-                condition: service_healthy
-            kafka:
-                condition: service_started
+            - kafka
+            - chat_db
 
 volumes:
     pgdata_users:
