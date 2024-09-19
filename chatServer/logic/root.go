@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/SzymonMielecki/chatApp/chatServer/persistance"
@@ -22,5 +23,6 @@ func (s *Server) Close() {
 }
 
 func (s *Server) UploadMessages(ctx context.Context, wg *sync.WaitGroup) {
+	fmt.Println("Uploading messages")
 	s.streaming.UploadMessages(ctx, s.db, wg)
 }

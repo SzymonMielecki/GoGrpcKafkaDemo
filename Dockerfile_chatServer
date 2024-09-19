@@ -1,19 +1,13 @@
-FROM golang:1.22 AS builder
+FROM golang:1.22 
 
 WORKDIR /app
 
 COPY . .
 
 RUN go mod tidy
-
 RUN CGO_ENABLED=0 GOOS=linux go build -o main chatServer/main.go
 
-FROM alpine:latest
+COPY wait-for-db.sh /wait-for-db.sh
+RUN chmod +x /wait-for-db.sh
 
-RUN apk add --no-cache ca-certificates postgresql-client
-
-COPY --from=builder /app/main main
-
-EXPOSE 50051
-
-CMD ["./main"]
+CMD ["/wait-for-db.sh", "chat_db", "5433", "./main"]

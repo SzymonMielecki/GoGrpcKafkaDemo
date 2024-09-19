@@ -51,10 +51,13 @@ func LoadState() (*LoginState, error) {
 		return nil, err
 	}
 
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("chat_server:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		conn, err = grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	}
 	defer conn.Close()
 	c := pb.NewUsersServiceClient(conn)

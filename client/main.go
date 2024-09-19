@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 
-	"github.com/SzymonMielecki/chatApp/client/cmd"
 	"github.com/SzymonMielecki/chatApp/client/loginState"
 	"github.com/SzymonMielecki/chatApp/client/userServiceClient"
 	"github.com/SzymonMielecki/chatApp/streaming"
@@ -27,9 +27,9 @@ var rootCmd = &cobra.Command{
 }
 
 var readerCmd = &cobra.Command{
-	Use:   "chatApp",
-	Short: "ChatApp is a chat application",
-	Long:  `ChatApp is a chat application`,
+	Use:   "reader",
+	Short: "Reader is a command that reads messages from the chat",
+	Long:  `Reader is a command that reads messages from the chat`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(context.Background())
 		state, err := loginState.LoadState()
@@ -58,7 +58,7 @@ var readerCmd = &cobra.Command{
 		}
 		fmt.Println("Logged in as", state.Username)
 
-		streaming := streaming.NewStreaming("chat", 0)
+		streaming := streaming.NewStreaming("kafka", "chat", 0)
 		defer streaming.Close()
 		ch := make(chan *types.Message)
 		var wg sync.WaitGroup
@@ -82,9 +82,9 @@ var readerCmd = &cobra.Command{
 }
 
 var writerCmd = &cobra.Command{
-	Use:   "chatApp",
-	Short: "ChatApp is a chat application",
-	Long:  `ChatApp is a chat application`,
+	Use:   "writer",
+	Short: "Writer is a command that writes messages to the chat",
+	Long:  `Writer is a command that writes messages to the chat`,
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -114,39 +114,129 @@ var writerCmd = &cobra.Command{
 		}
 		fmt.Println("Logged in as", state.Username)
 
-		streaming := streaming.NewStreaming("chat", 0)
+		streaming := streaming.NewStreaming("kafka", "chat", 0)
 		defer streaming.Close()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		content := strings.Join(args, " ")
-		if content[0] == '"' && content[len(content)-1] == '"' {
-			content = content[1 : len(content)-1]
-		}
 		streaming.SendMessage(ctx, &types.Message{
-			Content:  content,
+			Content:  message,
 			SenderID: state.Id,
 		})
 		cancel()
 	},
 }
 
-func Execute() {
-	cmd.LoginCmd.Flags().StringP("username", "u", "", "Username")
-	cmd.LoginCmd.MarkFlagRequired("username")
-	cmd.LoginCmd.Flags().StringP("email", "e", "", "Email")
-	cmd.LoginCmd.MarkFlagRequired("email")
-	cmd.RegisterCmd.Flags().StringP("password", "p", "", "Password")
-	cmd.RegisterCmd.MarkFlagRequired("password")
-	rootCmd.AddCommand(cmd.RegisterCmd)
+var LoginCmd = &cobra.Command{
+	Use:   "login",
+	Short: "Login to the chat application",
+	Long:  `Login to the chat application`,
+	Run: func(cmd *cobra.Command, args []string) {
+		hasher := sha256.New()
+		hasher.Write([]byte(password))
+		passwordHash := hex.EncodeToString(hasher.Sum(nil))
+		usernameOrEmail := username
+		if usernameOrEmail == "" {
+			usernameOrEmail = email
+		}
+		user := &pb.LoginUserRequest{
+			UsernameOrEmail: usernameOrEmail,
+			PasswordHash:    passwordHash,
+		}
+		client, err := userServiceClient.NewUserServiceClient()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer client.Close()
+		response, err := client.LoginUser(context.Background(), user)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		state := loginState.NewLoginState(
+			response.Success,
+			uint(response.User.Id),
+			username,
+			email,
+			passwordHash,
+		)
+		state.Save()
+	},
+}
 
-	cmd.LoginCmd.Flags().StringP("username", "u", "", "Username")
-	cmd.LoginCmd.Flags().StringP("email", "e", "", "Email")
-	cmd.LoginCmd.MarkFlagsOneRequired("username", "email")
-	cmd.LoginCmd.Flags().StringP("password", "p", "", "Password")
-	cmd.LoginCmd.MarkFlagRequired("password")
-	rootCmd.AddCommand(cmd.LoginCmd)
+var RegisterCmd = &cobra.Command{
+	Use:   "register",
+	Short: "Register to the chat application",
+	Long:  `Register to the chat application`,
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		client, err := userServiceClient.NewUserServiceClient()
+		if err != nil {
+			fmt.Println(err)
+			cancel()
+			os.Exit(1)
+			return
+		}
+		defer client.Close()
+		hasher := sha256.New()
+		hasher.Write([]byte(password))
+		passwordHash := hex.EncodeToString(hasher.Sum(nil))
+		user := &pb.RegisterUserRequest{
+			Username:     username,
+			Email:        email,
+			PasswordHash: passwordHash,
+		}
+		response, err := client.RegisterUser(ctx, user)
+		if err != nil {
+			fmt.Println(response)
+			fmt.Println(err)
+			cancel()
+			os.Exit(1)
+			return
+		}
+		state := loginState.NewLoginState(
+			response.Success,
+			uint(response.User.Id),
+			username,
+			email,
+			passwordHash,
+		)
+		state.Save()
+		cancel()
+	},
+}
+
+var username string
+var email string
+var password string
+var message string
+
+func Execute() {
+	// Add flags for LoginCmd
+	LoginCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
+	LoginCmd.Flags().StringVarP(&email, "email", "e", "", "Email")
+	LoginCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
+	LoginCmd.MarkFlagsOneRequired("username", "email")
+	LoginCmd.MarkFlagRequired("password")
+
+	// Add flags for RegisterCmd
+	RegisterCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
+	RegisterCmd.Flags().StringVarP(&email, "email", "e", "", "Email")
+	RegisterCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
+	RegisterCmd.MarkFlagRequired("username")
+	RegisterCmd.MarkFlagRequired("email")
+	RegisterCmd.MarkFlagRequired("password")
+
+	// Add flags for writerCmd
+	writerCmd.Flags().StringVarP(&message, "message", "m", "", "Message")
+	writerCmd.MarkFlagRequired("message")
+
+	// Add commands to rootCmd
+	rootCmd.AddCommand(LoginCmd)
+	rootCmd.AddCommand(RegisterCmd)
+	rootCmd.AddCommand(writerCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

@@ -46,6 +46,7 @@ func (c *UserServiceClient) LoginUser(ctx context.Context, user *pb.LoginUserReq
 func (c *UserServiceClient) RegisterUser(ctx context.Context, user *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
 	return c.client.RegisterUser(ctx, user)
 }
+
 func (c *UserServiceClient) GetUser(ctx context.Context, user *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	return c.client.GetUser(ctx, user)
 }

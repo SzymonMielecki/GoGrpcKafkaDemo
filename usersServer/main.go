@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"github.com/SzymonMielecki/chatApp/usersServer/logic"
 	"github.com/SzymonMielecki/chatApp/usersServer/persistance"
@@ -31,22 +32,18 @@ func main() {
 }
 
 func handleDbConnection() (*persistance.DB, error) {
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+
 	db, err := persistance.NewDB(
-		"users_db",
-		"postgres",
-		"chatAppPass",
-		"postgres",
-		"5432",
-	)
-	if err == nil {
-		return db, nil
-	}
-	db, err = persistance.NewDB(
-		"localhost",
-		"postgres",
-		"chatAppPass",
-		"postgres",
-		"5432",
+		dbHost,
+		dbName,
+		dbPassword,
+		dbUser,
+		dbPort,
 	)
 	if err == nil {
 		return db, nil

@@ -3,6 +3,7 @@ package streaming
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"sync"
 
@@ -18,9 +19,10 @@ type Streaming struct {
 	brokers   []string
 }
 
-func NewStreaming(topic string, partition int) *Streaming {
-	conn, err := kafka.DialLeader(context.Background(), "tcp", "localhost:9092", topic, partition)
+func NewStreaming(host string, topic string, partition int) *Streaming {
+	conn, err := kafka.DialLeader(context.Background(), "tcp", host+":9092", topic, partition)
 	if err != nil {
+		conn, err = kafka.DialLeader(context.Background(), "tcp", "localhost:9092", topic, partition)
 		log.Fatal("failed to dial leader:", err)
 	}
 	return &Streaming{conn: conn, topic: topic, partition: partition}
@@ -31,6 +33,7 @@ func (s *Streaming) Close() {
 }
 
 func (s *Streaming) UploadMessages(ctx context.Context, db *persistance.DB, wg *sync.WaitGroup) {
+	fmt.Println("Uploading messages")
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:   s.brokers,
 		Topic:     s.topic,
@@ -41,6 +44,7 @@ func (s *Streaming) UploadMessages(ctx context.Context, db *persistance.DB, wg *
 	for {
 		select {
 		case <-ctx.Done():
+			fmt.Println("Uploading messages done")
 			wg.Done()
 			return
 		default:

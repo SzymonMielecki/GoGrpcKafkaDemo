@@ -19,7 +19,10 @@ func NewServer(db *persistance.DB) *Server {
 
 func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
 	var found types.User
-	s.db.Find(&types.User{Username: in.UsernameOrEmail}).Or(&types.User{Email: in.UsernameOrEmail}).First(&found)
+	err := s.db.Find(&types.User{Username: in.UsernameOrEmail}).Or(&types.User{Email: in.UsernameOrEmail}).First(&found).Error
+	if err != nil {
+		return &pb.LoginUserResponse{}, err
+	}
 	if found.Model.ID == 0 {
 		return &pb.LoginUserResponse{
 			Success: false,
@@ -44,11 +47,7 @@ func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.Lo
 func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
 	found_username, err := s.db.GetUserByUsername(in.Username)
 	if err != nil {
-		return &pb.RegisterUserResponse{
-			Success: false,
-			User:    &pb.User{},
-			Message: "Username already exists",
-		}, nil
+		return &pb.RegisterUserResponse{}, err
 	}
 	if found_username.ID != 0 {
 		return &pb.RegisterUserResponse{
@@ -59,11 +58,7 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 	}
 	found_email, err := s.db.GetUserByEmail(in.Email)
 	if err != nil {
-		return &pb.RegisterUserResponse{
-			Success: false,
-			User:    &pb.User{},
-			Message: "Email already exists",
-		}, nil
+		return &pb.RegisterUserResponse{}, err
 	}
 	if found_email.ID != 0 {
 		return &pb.RegisterUserResponse{
@@ -79,11 +74,7 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 	}
 	err = s.db.CreateUser(&user)
 	if err != nil {
-		return &pb.RegisterUserResponse{
-			Success: false,
-			User:    &pb.User{},
-			Message: "Failed to register",
-		}, err
+		return &pb.RegisterUserResponse{}, err
 	}
 	return &pb.RegisterUserResponse{
 		Success: true,
