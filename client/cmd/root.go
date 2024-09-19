@@ -19,7 +19,7 @@ import (
 
 type LoginState struct {
 	LoggedIn     bool   `json:"logged_in"`
-	Id           string `json:"id"`
+	Id           uint   `json:"id"`
 	Username     string `json:"username"`
 	Email        string `json:"email"`
 	PasswordHash string `json:"password_hash"`
@@ -72,7 +72,7 @@ func LoadState() (*LoginState, error) {
 	}
 	if response.Success {
 		s.LoggedIn = true
-		s.Id = response.Id
+		s.Id = uint(response.Id)
 	}
 	return nil, fmt.Errorf("invalid credentials")
 }
@@ -105,10 +105,13 @@ var loginCmd = &cobra.Command{
 			UsernameOrEmail: usernameOrEmail,
 			PasswordHash:    passwordHash,
 		}
-		conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient("usersServer:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			conn, err = grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		}
 		defer conn.Close()
 		c := pb.NewUsersServiceClient(conn)
@@ -119,7 +122,7 @@ var loginCmd = &cobra.Command{
 		}
 		state := &LoginState{
 			LoggedIn:     response.Success,
-			Id:           response.Id,
+			Id:           uint(response.Id),
 			Username:     username,
 			Email:        email,
 			PasswordHash: passwordHash,
@@ -133,10 +136,13 @@ var registerCmd = &cobra.Command{
 	Short: "Register to the chat application",
 	Long:  `Register to the chat application`,
 	Run: func(cmd *cobra.Command, args []string) {
-		conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient("usersServer:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			conn, err = grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		}
 		defer conn.Close()
 		c := pb.NewUsersServiceClient(conn)
@@ -158,7 +164,7 @@ var registerCmd = &cobra.Command{
 		}
 		state := &LoginState{
 			LoggedIn:     response.Success,
-			Id:           response.Id,
+			Id:           uint(response.Id),
 			Username:     username,
 			Email:        email,
 			PasswordHash: passwordHash,

@@ -1,5 +1,5 @@
 services:
-    db:
+    users_db:
         image: postgres
         restart: always
         environment:
@@ -11,12 +11,43 @@ services:
 
     users_server:
         build:
-            context: .
-            dockerfile: Dockerfile
+            context: ./
+            dockerfile: Dockerfile_usersServer
         ports:
             - "50051:50051"
         depends_on:
-            - db
+            - users_db
+
+    kafka:
+        image: confluentinc/cp-kafka:7.5.8
+        ports:
+            - "9092:9092"
+        environment:
+            KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+            KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+            KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+            KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    chat_db:
+        image: postgres
+        restart: always
+        environment:
+            POSTGRES_PASSWORD: chatAppPass
+        ports:
+            - "5433:5432"
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+
+    chat_server:
+        build:
+            context: .
+            dockerfile: Dockerfile_chatServer
+        ports:
+            - "50052:50052"
+        depends_on:
+            - chat_db
+            - kafka
 
 volumes:
     pgdata:

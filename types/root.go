@@ -7,16 +7,21 @@ import (
 
 type User struct {
 	gorm.Model
-	ID           string
-	Username     string
-	Email        string
+	Username     string `gorm:"unique"`
+	Email        string `gorm:"unique"`
 	PasswordHash string
 }
 
 func (u *User) ToProto() *pb.User {
 	return &pb.User{
-		Id:       u.ID,
+		Id:       uint32(u.Model.ID),
 		Username: u.Username,
 		Email:    u.Email,
 	}
+}
+
+type Message struct {
+	gorm.Model
+	Content  string
+	SenderID uint
 }

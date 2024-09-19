@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package chatService;
+
+option go_package = "github.com/SzymonMielecki/chatApp/chatService";
+
+service ChatService {
+    rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {}
+}
+
+message SendMessageRequest {
+    uint32 senderId = 1;
+    string content = 2;
+}
+
+message SendMessageResponse {
+    bool success = 1;
+    string errorMessage = 2;
+    uint32 messageId = 3;
+}

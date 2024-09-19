@@ -5,7 +5,7 @@ option go_package = "github.com/SzymonMielecki/chatApp/usersService";
 package usersService;
 
 message User {
-    string id = 1;
+    uint32 id = 1;
     string username = 2;
     string email = 3;
 }
@@ -24,7 +24,7 @@ message LoginUserRequest {
 
 message LoginUserResponse {
     bool success = 1;
-    string id = 2;
+    uint32 id = 2;
     string message = 3;
 }
 
@@ -36,17 +36,17 @@ message RegisterUserRequest {
 
 message RegisterUserResponse {
     bool success = 1;
-    string id = 2;
+    uint32 id = 2;
     string message = 3;
 }
 
 message GetUserRequest {
-    string id = 1;
+    uint32 id = 1;
 }
 
 message GetUserResponse {
     bool success = 1;
-    string id = 2;
+    uint32 id = 2;
     string message = 3;
     User user = 4;
 }
@@ -59,6 +59,6 @@ message CheckUserRequest {
 
 message CheckUserResponse {
     bool success = 1;
-    string id = 2;
+    uint32 id = 2;
     string message = 3;
 }

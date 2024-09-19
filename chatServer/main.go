@@ -5,9 +5,10 @@ import (
 	"log"
 	"net"
 
-	"github.com/SzymonMielecki/chatApp/usersServer/logic"
-	"github.com/SzymonMielecki/chatApp/usersServer/persistance"
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	"github.com/SzymonMielecki/chatApp/chatServer/logic"
+	"github.com/SzymonMielecki/chatApp/chatServer/persistance"
+	"github.com/SzymonMielecki/chatApp/chatServer/streaming"
+	pb "github.com/SzymonMielecki/chatApp/chatService"
 	"google.golang.org/grpc"
 )
 
@@ -16,23 +17,23 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	streaming := streaming.NewStreaming("chat", 0)
 	s := grpc.NewServer()
-	logic := logic.NewServer(db)
-	pb.RegisterUsersServiceServer(s, logic)
+	logic := logic.NewServer(db, streaming)
+	defer logic.Close()
+	pb.RegisterChatServiceServer(s, logic)
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-
 }
-
 func handleDbConnection() (*persistance.DB, error) {
 	db, err := persistance.NewDB(
-		"users_db",
+		"chat_db",
 		"postgres",
 		"chatAppPass",
 		"postgres",

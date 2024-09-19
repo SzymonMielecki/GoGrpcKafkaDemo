@@ -20,23 +20,23 @@ func NewServer(db *persistance.DB) *Server {
 func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
 	var found types.User
 	s.db.Find(&types.User{Username: in.UsernameOrEmail}).Or(&types.User{Email: in.UsernameOrEmail}).First(&found)
-	if found.ID == "" {
+	if found.Model.ID == 0 {
 		return &pb.LoginUserResponse{
 			Success: false,
-			Id:      "",
+			Id:      0,
 			Message: "User not found",
 		}, nil
 	}
 	if found.PasswordHash != in.PasswordHash {
 		return &pb.LoginUserResponse{
 			Success: false,
-			Id:      "",
+			Id:      0,
 			Message: "Incorrect password",
 		}, nil
 	}
 	return &pb.LoginUserResponse{
 		Success: true,
-		Id:      found.ID,
+		Id:      uint32(found.Model.ID),
 		Message: "Logged in",
 	}, nil
 }
@@ -46,14 +46,14 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 	if err != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      "",
+			Id:      0,
 			Message: "Username already exists",
 		}, nil
 	}
-	if found_username.ID != "" {
+	if found_username.ID != 0 {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      "",
+			Id:      0,
 			Message: "Username already exists",
 		}, nil
 	}
@@ -61,14 +61,14 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 	if err != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      "",
+			Id:      0,
 			Message: "Email already exists",
 		}, nil
 	}
-	if found_email.ID != "" {
+	if found_email.ID != 0 {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      "",
+			Id:      0,
 			Message: "Email already exists",
 		}, nil
 	}
@@ -81,19 +81,19 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 	if err != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
-			Id:      "",
+			Id:      0,
 			Message: "Failed to register",
 		}, err
 	}
 	return &pb.RegisterUserResponse{
 		Success: true,
-		Id:      user.ID,
+		Id:      uint32(user.Model.ID),
 		Message: "Registered",
 	}, nil
 }
 
 func (s *Server) GetUser(ctx context.Context, in *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	user, err := s.db.GetUserById(in.Id)
+	user, err := s.db.GetUserById(uint(in.Id))
 	if err != nil {
 		return &pb.GetUserResponse{
 			Success: false,
@@ -113,20 +113,20 @@ func (s *Server) CheckUser(ctx context.Context, in *pb.CheckUserRequest) (*pb.Ch
 	if err != nil {
 		return &pb.CheckUserResponse{
 			Success: false,
-			Id:      "",
+			Id:      0,
 			Message: "User not found",
 		}, err
 	}
 	if user.PasswordHash != in.PasswordHash {
 		return &pb.CheckUserResponse{
 			Success: false,
-			Id:      "",
+			Id:      0,
 			Message: "Incorrect password",
 		}, nil
 	}
 	return &pb.CheckUserResponse{
 		Success: true,
-		Id:      user.ID,
+		Id:      uint32(user.ID),
 		Message: "User found",
 	}, nil
 }
