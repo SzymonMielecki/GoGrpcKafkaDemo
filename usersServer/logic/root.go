@@ -46,42 +46,27 @@ func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.Lo
 }
 
 func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
-	found_username, err := s.db.GetUserByUsername(in.Username)
-	if err != nil {
-		return &pb.RegisterUserResponse{
-			Success: false,
-			User:    &pb.User{},
-			Message: "Error getting user by username",
-		}, fmt.Errorf("error getting user by username: %w", err)
-	}
-	if found_username.ID != 0 {
+	username_exists := s.db.UsernameExists(in.Username)
+	if username_exists {
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
 			Message: "Username already exists",
-		}, fmt.Errorf("username already exists: %w", err)
+		}, fmt.Errorf("username already exists")
 	}
-	found_email, err := s.db.GetUserByEmail(in.Email)
-	if err != nil {
-		return &pb.RegisterUserResponse{
-			Success: false,
-			User:    &pb.User{},
-			Message: "Error getting user by email",
-		}, fmt.Errorf("error getting user by email: %w", err)
-	}
-	if found_email.ID != 0 {
+	email_exists := s.db.EmailExists(in.Email)
+	if email_exists {
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
 			Message: "Email already exists",
-		}, fmt.Errorf("email already exists: %w", err)
+		}, fmt.Errorf("email already exists")
 	}
-	user := types.User{
+	user, err := s.db.CreateUser(&types.User{
 		Username:     in.Username,
 		Email:        in.Email,
 		PasswordHash: in.PasswordHash,
-	}
-	err = s.db.CreateUser(&user)
+	})
 	if err != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,

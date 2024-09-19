@@ -23,22 +23,60 @@ func NewDB(host, user, password, dbname, port string) (*DB, error) {
 	return &DB{db}, nil
 }
 
-func (db *DB) CreateUser(user *types.User) error {
-	return db.DB.Create(user).Error
+func (db *DB) CreateUser(user *types.User) (*types.User, error) {
+	err := db.DB.Create(user).Error
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (db *DB) GetUserById(id uint) (*types.User, error) {
 	var user types.User
 
-	return &user, db.DB.Where("id = ?", id).First(&user).Error
+	err := db.DB.Model(&types.User{
+		Model: gorm.Model{
+			ID: id,
+		},
+	}).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (db *DB) GetUserByEmail(email string) (*types.User, error) {
 	var user types.User
-	return &user, db.DB.Where("email = ?", email).First(&user).Error
+	err := db.DB.Model(&types.User{Email: email}).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (db *DB) GetUserByUsername(username string) (*types.User, error) {
 	var user types.User
-	return &user, db.DB.Where("username = ?", username).First(&user).Error
+	err := db.DB.Model(&types.User{Username: username}).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (db *DB) UsernameExists(username string) bool {
+	var count int64
+	err := db.DB.Model(&types.User{}).Where("username = ?", username).Count(&count).Error
+	if err != nil {
+		return false
+	}
+	return count > 0
+}
+
+func (db *DB) EmailExists(email string) bool {
+	var count int64
+	err := db.DB.Model(&types.User{}).Where("email = ?", email).Count(&count).Error
+	if err != nil {
+		return false
+	}
+	return count > 0
 }
