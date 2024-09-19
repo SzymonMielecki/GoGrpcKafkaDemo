@@ -6,6 +6,7 @@ option go_package = "github.com/SzymonMielecki/chatApp/chatService";
 
 service ChatService {
     rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {}
+    rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse) {}
 }
 
 message SendMessageRequest {
@@ -18,3 +19,14 @@ message SendMessageResponse {
     string errorMessage = 2;
     uint32 messageId = 3;
 }
+
+message GetMessagesRequest {
+}
+
+message GetMessagesResponse {
+    bool success = 1;
+    string errorMessage = 2;
+    repeated Message messages = 3;
+
+}
+    uint32 userId = 1;
