@@ -6,9 +6,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/SzymonMielecki/chatApp/usersServer/logic"
-	"github.com/SzymonMielecki/chatApp/usersServer/persistance"
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersServer/logic"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersServer/persistance"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"google.golang.org/grpc"
 )
 

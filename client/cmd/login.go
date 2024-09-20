@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/SzymonMielecki/chatApp/client/loginState"
-	"github.com/SzymonMielecki/chatApp/client/userServiceClient"
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"github.com/spf13/cobra"
 )
 

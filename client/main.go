@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/SzymonMielecki/chatApp/client/cmd"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/cmd"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/logs"
 )
 
 var username string
@@ -17,14 +18,13 @@ func Execute() {
 	RegisterCmd := cmd.RegisterCommand(username, email, password)
 	LoginCmd := cmd.LoginCommand(username, email, password)
 	WriterCmd := cmd.WriterCommand()
-	// Add flags for LoginCmd
+
 	LoginCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
 	LoginCmd.Flags().StringVarP(&email, "email", "e", "", "Email")
 	LoginCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
 	LoginCmd.MarkFlagsOneRequired("username", "email")
 	LoginCmd.MarkFlagRequired("password")
 
-	// Add flags for RegisterCmd
 	RegisterCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
 	RegisterCmd.Flags().StringVarP(&email, "email", "e", "", "Email")
 	RegisterCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
@@ -40,6 +40,7 @@ func Execute() {
 
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
+		logs.WriteToLogs(err.Error())
 		os.Exit(1)
 	}
 }

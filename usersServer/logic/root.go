@@ -3,9 +3,9 @@ package logic
 import (
 	"context"
 
-	"github.com/SzymonMielecki/chatApp/types"
-	"github.com/SzymonMielecki/chatApp/usersServer/persistance"
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersServer/persistance"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 )
 
 type Server struct {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

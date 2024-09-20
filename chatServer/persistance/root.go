@@ -1,7 +1,7 @@
 package persistance
 
 import (
-	"github.com/SzymonMielecki/chatApp/types"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

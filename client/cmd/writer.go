@@ -7,25 +7,30 @@ import (
 	"os"
 	"sync"
 
-	"github.com/SzymonMielecki/chatApp/client/loginState"
-	"github.com/SzymonMielecki/chatApp/client/userServiceClient"
-	"github.com/SzymonMielecki/chatApp/streaming/producer"
-	"github.com/SzymonMielecki/chatApp/types"
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/producer"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"github.com/spf13/cobra"
 )
 
 func WriterCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "writer",
-		Short: "Writer is a command that writes messages to the chat",
-		Long:  `Writer is a command that writes messages to the chat`,
+		Short: "Writes messages to the chat",
+		Long:  `Writes messages to the chat, you need to be logged in to use this command`,
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx, cancel := context.WithCancel(context.Background())
 			state, err := loginState.LoadState(ctx)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
+			}
+			if !state.LoggedIn {
+				fmt.Printf("\033[1;31mYou need to be logged in to use this command\033[0m\n")
+				cancel()
+				return
 			}
 			userServiceClient, err := userServiceClient.NewUserServiceClient()
 			if err != nil {

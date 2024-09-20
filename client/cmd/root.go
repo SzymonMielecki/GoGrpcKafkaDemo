@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/SzymonMielecki/chatApp/client/loginState"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
 	"github.com/spf13/cobra"
 )
 
 func RootCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "chatApp",
-		Short: "ChatApp is a chat application",
-		Long:  `ChatApp is a chat application`,
+		Use:   "chatUp",
+		Short: "ChatUp is a chat application",
+		Long:  `ChatUp is a real-time chat application based on Kafka and gRPC`,
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx, cancel := context.WithCancel(context.Background())
 			state, err := loginState.LoadState(ctx)
@@ -21,13 +21,9 @@ func RootCommand() *cobra.Command {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			fmt.Println("Welcome to ChatApp!")
+			fmt.Println("Welcome to ChatUp!")
 			fmt.Println("You are logged in as", state.Username)
-			fmt.Println("You can use the following commands:")
-			fmt.Println("reader - reads messages from the chat")
-			fmt.Println("writer - writes messages to the chat")
-			fmt.Println("login - logs you in")
-			fmt.Println("register - registers you to the chat")
+			fmt.Println("For a list of commands, type 'help'")
 			cancel()
 		},
 	}

@@ -1,4 +1,4 @@
-module github.com/SzymonMielecki/chatApp
+module github.com/SzymonMielecki/GoGrpcKafkaGormDemo
 
 go 1.22.0
 

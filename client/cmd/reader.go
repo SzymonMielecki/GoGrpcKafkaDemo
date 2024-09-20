@@ -5,30 +5,34 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/SzymonMielecki/chatApp/client/loginState"
-	"github.com/SzymonMielecki/chatApp/client/userServiceClient"
-	"github.com/SzymonMielecki/chatApp/streaming/client"
-	"github.com/SzymonMielecki/chatApp/types"
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/client"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"github.com/spf13/cobra"
 )
 
 func ReaderCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "reader",
-		Short: "Reader is a command that reads messages from the chat",
-		Long:  `Reader is a command that reads messages from the chat`,
+		Short: "Reads messages from the chat",
+		Long:  `Reads messages from the chat, you need to be logged in to use this command`,
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx, cancel := context.WithCancel(context.Background())
 			state, err := loginState.LoadState(ctx)
 			if err != nil {
-				fmt.Println("Error loading state in client/main.go: \n", err)
+				cancel()
+				return
+			}
+			if !state.LoggedIn {
+				fmt.Printf("\033[1;31mYou need to be logged in to use this command\033[0m\n")
 				cancel()
 				return
 			}
 			userServiceClient, err := userServiceClient.NewUserServiceClient()
 			if err != nil {
-				fmt.Println("Error creating user service client in client/main.go: \n", err)
+				fmt.Printf("\033[1;31mFailed to create user service client in client/cmd/reader.go: \n%v\033[0m", err)
 				cancel()
 				return
 			}
@@ -39,18 +43,19 @@ func ReaderCommand() *cobra.Command {
 				PasswordHash: state.PasswordHash,
 			})
 			if err != nil {
-				fmt.Println("Error checking user in client/main.go: \n", err)
+				fmt.Printf("\033[1;31mFailed to check user in client/cmd/reader.go: \n%v\033[0m", err)
 				cancel()
 				return
 			}
 			if !response.Success {
-				fmt.Println("Not logged in")
+				fmt.Printf("\033[1;31mNot logged in\033[0m")
 				cancel()
 				return
 			}
 			fmt.Println("Logged in as", state.Username)
 			streaming, err := client.NewStreamingClient(ctx, "chat", 1, []string{"localhost:9092"})
 			if err != nil {
+				fmt.Printf("\033[1;31mFailed to create streaming client in client/cmd/reader.go: \n%v\033[0m", err)
 				cancel()
 				return
 			}
@@ -59,11 +64,11 @@ func ReaderCommand() *cobra.Command {
 			var wg sync.WaitGroup
 
 			wg.Add(1)
-			fmt.Println("Starting to receive messages")
+
 			go streaming.ReceiveMessages(ctx, ch, &wg)
 
 			wg.Add(1)
-			fmt.Println("Starting to print messages")
+
 			go func() {
 				for {
 					select {
@@ -76,6 +81,7 @@ func ReaderCommand() *cobra.Command {
 					}
 				}
 			}()
+			fmt.Println("The chat is running, press Ctrl+C to stop")
 			wg.Wait()
 			cancel()
 		},

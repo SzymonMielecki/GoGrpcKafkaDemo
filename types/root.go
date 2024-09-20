@@ -1,7 +1,7 @@
 package types
 
 import (
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"gorm.io/gorm"
 )
 

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/SzymonMielecki/chatApp/client/loginState"
-	"github.com/SzymonMielecki/chatApp/client/userServiceClient"
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +24,7 @@ func RegisterCommand(username, email, password string) *cobra.Command {
 
 			client, err := userServiceClient.NewUserServiceClient()
 			if err != nil {
-				fmt.Printf("create user in client/main.go: \n%v", err)
+				fmt.Printf("\033[1;31mFailed to create user in client/main.go: \n%v\033[0m", err)
 				os.Exit(1)
 			}
 			defer client.Close()
@@ -39,7 +39,7 @@ func RegisterCommand(username, email, password string) *cobra.Command {
 			}
 			response, err := client.RegisterUser(ctx, user)
 			if err != nil {
-				fmt.Printf("Failed to register user in client/main.go: \n%v", err)
+				fmt.Printf("\033[1;31mFailed to register user in client/main.go: \n%v\033[0m", err)
 				os.Exit(1)
 			}
 			state := loginState.NewLoginState(

@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	pb "github.com/SzymonMielecki/chatApp/usersService"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -49,6 +49,9 @@ func LoadState(ctx context.Context) (*LoginState, error) {
 	err = json.Unmarshal(data, s)
 	if err != nil {
 		return nil, err
+	}
+	if !s.LoggedIn {
+		return s, fmt.Errorf("you need to be logged in to use this command")
 	}
 
 	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
