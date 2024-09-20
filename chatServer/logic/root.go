@@ -5,36 +5,39 @@ import (
 	"sync"
 
 	"github.com/SzymonMielecki/chatApp/chatServer/persistance"
-	"github.com/SzymonMielecki/chatApp/streaming/consumer"
+	"github.com/SzymonMielecki/chatApp/streaming/client"
 	"github.com/SzymonMielecki/chatApp/types"
 )
 
 type Server struct {
-	db       *persistance.DB
-	consumer *consumer.StreamingConsumer
+	db     *persistance.DB
+	client *client.StreamingClient
 }
 
-func NewServer(db *persistance.DB, consumer *consumer.StreamingConsumer) *Server {
-	return &Server{db: db, consumer: consumer}
+func NewServer(db *persistance.DB, client *client.StreamingClient) *Server {
+	return &Server{db: db, client: client}
 }
 
 func (s *Server) Close() {
-	s.consumer.Close()
+	s.client.Close()
 }
 
 func (s *Server) UploadMessages(ctx context.Context) {
-	ch := make(chan *types.Message)
+	ch := make(chan *types.StreamingMessage)
 	defer close(ch)
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go s.consumer.ReceiveMessages(ctx, ch, &wg)
+	go s.client.ReceiveMessages(ctx, ch, &wg)
 	for {
 		select {
 		case <-ctx.Done():
 			wg.Wait()
 			return
 		case msg := <-ch:
-			s.db.CreateMessage(msg)
+			s.db.CreateMessage(&types.Message{
+				Content:  msg.Content,
+				SenderID: msg.SenderID,
+			})
 		}
 	}
 }

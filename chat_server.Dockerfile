@@ -5,21 +5,19 @@ WORKDIR /app
 COPY . .
 
 RUN go mod tidy
-RUN CGO_ENABLED=1 GOOS=linux go build -o main chatServer/main.go
 
-FROM alpine:latest
+# Keep CGO enabled
+RUN CGO_ENABLED=1 GOOS=linux go build -o chat_server chatServer/main.go
 
-RUN apk add --no-cache ca-certificates postgresql-client 
-RUN apk add --no-cache netcat-openbsd 
-RUN apk add --no-cache librdkafka-dev pkgconf
-RUN apk add --no-cache gcc musl-dev
+# Use Ubuntu 22.04 as the base image
+FROM ubuntu:22.04
 
-WORKDIR /app
+# Install necessary libraries
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    librdkafka-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/wait-for-kafka-and-db.sh .
-COPY --from=builder /app/main .
+COPY --from=builder /app/chat_server /chat_server
 
-RUN chmod +x /app/wait-for-kafka-and-db.sh
-
-
-CMD ["/app/wait-for-kafka-and-db.sh", "chat_db", "5432", "kafka", "9092", "./main"]
+CMD ["./chat_server"]

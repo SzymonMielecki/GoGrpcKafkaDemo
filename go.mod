@@ -3,8 +3,8 @@ module github.com/SzymonMielecki/chatApp
 go 1.22.0
 
 require (
-	github.com/confluentinc/confluent-kafka-go/v2 v2.5.3
 	github.com/spf13/cobra v1.8.1
+	github.com/twmb/franz-go v1.17.1
 	google.golang.org/grpc v1.66.2
 	google.golang.org/protobuf v1.34.2
 	gorm.io/driver/postgres v1.5.9
@@ -19,7 +19,11 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
+	github.com/twmb/franz-go/pkg/kmsg v1.8.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
