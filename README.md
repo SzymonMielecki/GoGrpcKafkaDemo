@@ -7,9 +7,10 @@ This is a chat app based on microservices architecture.
 -   [x] Go
 -   [x] Docker
 -   [x] gRPC
--   [x] Kafka (yes i know I could've used grpc streaming but i wanted to try kafka)
+-   [x] Kafka
 -   [x] PostgresQl
 -   [x] gORM
+-   [x] Redis
 
 ## Usage Details
 
