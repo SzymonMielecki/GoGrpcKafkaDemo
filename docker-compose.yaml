@@ -24,6 +24,7 @@ services:
         - REDIS_PASSWORD=redisPass
         - REDIS_PORT=6379
         - REDIS_DATABASES=16
+        command: ["redis-server", "--appendonly", "no", "--maxmemory", "500mb", "--maxmemory-policy", "allkeys-lru"]
         healthcheck:
             test: ["CMD", "redis-cli", "ping"]
             interval: 1s
