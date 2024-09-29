@@ -5,14 +5,17 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/utils"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/producer"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"github.com/spf13/cobra"
+	"gorm.io/gorm"
 )
 
 func WriterCommand() *cobra.Command {
@@ -39,8 +42,7 @@ func WriterCommand() *cobra.Command {
 			}
 			defer userServiceClient.Close()
 			response, err := userServiceClient.CheckUser(ctx, &pb.CheckUserRequest{
-				Username:     state.Username,
-				Email:        state.Email,
+				Id:           uint32(state.Id),
 				PasswordHash: state.PasswordHash,
 			})
 			if err != nil {
@@ -51,7 +53,17 @@ func WriterCommand() *cobra.Command {
 				fmt.Println("Not logged in")
 				os.Exit(1)
 			}
-			fmt.Println("Logged in as", state.Username)
+
+			user := &types.User{
+				Model: gorm.Model{
+					ID: uint(response.User.Id),
+				},
+				Username: response.User.Username,
+				Email:    response.User.Email,
+			}
+			tagline := strings.Split(user.Email, "@")[0]
+			color := utils.GetColorForUser(user.Username)
+			fmt.Printf("Logged in as \033[%dm%s@%s\033[0m\n", color, user.Username, tagline)
 			fmt.Println("Enter your message:")
 			reader := bufio.NewReader(os.Stdin)
 			message, err := reader.ReadString('\n')
@@ -68,11 +80,9 @@ func WriterCommand() *cobra.Command {
 			defer streaming.Close()
 			var wg sync.WaitGroup
 			wg.Add(1)
-			err = streaming.SendMessage(ctx, &types.StreamingMessage{
-				Content:        message,
-				SenderID:       state.Id,
-				SenderUsername: state.Username,
-				SenderEmail:    state.Email,
+			err = streaming.SendMessage(ctx, &types.Message{
+				Content:  message,
+				SenderID: state.Id,
 			}, &wg)
 			if err != nil {
 				fmt.Println(err)

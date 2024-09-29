@@ -8,15 +8,14 @@ import (
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/logs"
 )
 
-var username string
-var email string
-var password string
-
 func Execute() {
+	var username string
+	var email string
+	var password string
 	RootCmd := cmd.RootCommand()
 	ReaderCmd := cmd.ReaderCommand()
-	RegisterCmd := cmd.RegisterCommand(username, email, password)
-	LoginCmd := cmd.LoginCommand(username, email, password)
+	RegisterCmd := cmd.RegisterCommand(&username, &email, &password)
+	LoginCmd := cmd.LoginCommand(&username, &email, &password)
 	WriterCmd := cmd.WriterCommand()
 
 	LoginCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
