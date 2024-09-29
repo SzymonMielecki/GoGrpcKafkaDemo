@@ -26,10 +26,3 @@ type Message struct {
 	Content  string
 	SenderID uint
 }
-
-type StreamingMessage struct {
-	SenderID       uint
-	SenderUsername string
-	SenderEmail    string
-	Content        string
-}

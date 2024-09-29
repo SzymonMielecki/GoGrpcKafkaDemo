@@ -16,8 +16,6 @@ import (
 type LoginState struct {
 	LoggedIn     bool   `json:"logged_in"`
 	Id           uint   `json:"id"`
-	Username     string `json:"username"`
-	Email        string `json:"email"`
 	PasswordHash string `json:"password_hash"`
 }
 
@@ -62,8 +60,6 @@ func LoadState(ctx context.Context) (*LoginState, error) {
 	defer conn.Close()
 	c := pb.NewUsersServiceClient(conn)
 	response, err := c.CheckUser(ctx, &pb.CheckUserRequest{
-		Username:     s.Username,
-		Email:        s.Email,
 		PasswordHash: s.PasswordHash,
 	})
 	if err != nil {
@@ -72,8 +68,6 @@ func LoadState(ctx context.Context) (*LoginState, error) {
 	if response.Success {
 		s.LoggedIn = true
 		s.Id = uint(response.User.Id)
-		s.Username = response.User.Username
-		s.Email = response.User.Email
 		return s, nil
 	}
 	fmt.Println("User not found")
@@ -90,8 +84,6 @@ func NewLoginState(
 	return &LoginState{
 		LoggedIn:     success,
 		Id:           id,
-		Username:     username,
-		Email:        email,
 		PasswordHash: passwordHash,
 	}
 }

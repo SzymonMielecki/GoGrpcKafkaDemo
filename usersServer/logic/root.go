@@ -101,7 +101,7 @@ func (s *Server) GetUser(ctx context.Context, in *pb.GetUserRequest) (*pb.GetUse
 }
 
 func (s *Server) CheckUser(ctx context.Context, in *pb.CheckUserRequest) (*pb.CheckUserResponse, error) {
-	user, err := s.db.GetUserByUsernameAndEmail(in.Username, in.Email)
+	user, err := s.db.GetUserById(uint(in.Id))
 	if err != nil {
 		return &pb.CheckUserResponse{
 			Success: false,

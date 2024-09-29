@@ -11,6 +11,7 @@ import (
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"github.com/spf13/cobra"
+	"gorm.io/gorm"
 )
 
 func ReaderCommand() *cobra.Command {
@@ -38,8 +39,7 @@ func ReaderCommand() *cobra.Command {
 			}
 			defer userServiceClient.Close()
 			response, err := userServiceClient.CheckUser(ctx, &pb.CheckUserRequest{
-				Username:     state.Username,
-				Email:        state.Email,
+				Id:           uint32(state.Id),
 				PasswordHash: state.PasswordHash,
 			})
 			if err != nil {
@@ -52,7 +52,13 @@ func ReaderCommand() *cobra.Command {
 				cancel()
 				return
 			}
-			fmt.Println("Logged in as", state.Username)
+			user := &types.User{
+				Model: gorm.Model{
+					ID: uint(response.User.Id),
+				},
+				Username: response.User.Username,
+			}
+			fmt.Printf("\033[1;32mLogged in as %s\033[0m\n", user.Username)
 			streaming, err := client.NewStreamingClient(ctx, "chat", 1, []string{"localhost:9092"})
 			if err != nil {
 				fmt.Printf("\033[1;31mFailed to create streaming client in client/cmd/reader.go: \n%v\033[0m", err)
@@ -60,7 +66,7 @@ func ReaderCommand() *cobra.Command {
 				return
 			}
 			defer streaming.Close()
-			ch := make(chan *types.StreamingMessage)
+			ch := make(chan *types.Message)
 			var wg sync.WaitGroup
 
 			wg.Add(1)
@@ -77,13 +83,18 @@ func ReaderCommand() *cobra.Command {
 						cancel()
 						return
 					case msg := <-ch:
-						fmt.Printf("\033[1;32m%d:\033[0m %s", msg.SenderID, msg.Content)
+						sender, err := userServiceClient.GetUser(ctx, &pb.GetUserRequest{
+							Id: uint32(msg.SenderID)})
+						if err != nil {
+							fmt.Printf("\033[1;31mFailed to get user in client/cmd/reader.go: \n%v\033[0m", err)
+						}
+						fmt.Printf("\033[1;32m%s:\033[0m %s", sender.User.Username, msg.Content)
 					}
 				}
 			}()
 			fmt.Println("The chat is running, press Ctrl+C to stop")
-			wg.Wait()
 			cancel()
+			wg.Wait()
 		},
 	}
 

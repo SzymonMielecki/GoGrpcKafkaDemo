@@ -23,7 +23,7 @@ func (s *Server) Close() {
 }
 
 func (s *Server) UploadMessages(ctx context.Context) {
-	ch := make(chan *types.StreamingMessage)
+	ch := make(chan *types.Message)
 	defer close(ch)
 	var wg sync.WaitGroup
 	wg.Add(1)

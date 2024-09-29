@@ -22,7 +22,11 @@ func RootCommand() *cobra.Command {
 				os.Exit(1)
 			}
 			fmt.Println("Welcome to ChatUp!")
-			fmt.Println("You are logged in as", state.Username)
+			if state.LoggedIn {
+				fmt.Println("You are logged in")
+			} else {
+				fmt.Println("You are not logged in")
+			}
 			fmt.Println("For a list of commands, type 'help'")
 			cancel()
 		},
