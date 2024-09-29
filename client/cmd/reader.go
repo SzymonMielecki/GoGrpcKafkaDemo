@@ -9,7 +9,7 @@ import (
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/utils"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/client"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/consumer"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"github.com/spf13/cobra"
@@ -64,7 +64,7 @@ func ReaderCommand() *cobra.Command {
 			tagline := strings.Split(user.Email, "@")[0]
 			color := utils.GetColorForUser(user.Username)
 			fmt.Printf("Logged in as \033[%dm%s@%s\033[0m\n", color, user.Username, tagline)
-			streaming, err := client.NewStreamingClient(ctx, "chat", 1, []string{"localhost:9092"})
+			streaming, err := consumer.NewStreamingConsumer(ctx, "chat", "broker:9092")
 			if err != nil {
 				fmt.Printf("\033[1;31mFailed to create streaming client in client/cmd/reader.go: \n%v\033[0m", err)
 				cancel()

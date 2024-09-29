@@ -8,7 +8,7 @@ import (
 
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/chatServer/logic"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/chatServer/persistance"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/client"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/consumer"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to database in chatServer/main.go: \n%v", err)
 	}
-	streaming, err := client.NewStreamingClient(ctx, "chat", 0, []string{"kafka:9092", "localhost:9092"})
+	streaming, err := consumer.NewStreamingConsumer(ctx, "chat", "broker:9092")
 	if err != nil {
 		log.Fatalf("failed to create streaming in chatServer/main.go: \n%v", err)
 	}

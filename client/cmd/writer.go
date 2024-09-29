@@ -72,15 +72,15 @@ func WriterCommand() *cobra.Command {
 				os.Exit(1)
 			}
 
-			streaming, err := producer.NewStreamingProducer(ctx, "chat", 1, []string{"localhost:9092"})
+			producer, err := producer.NewStreamingProducer(ctx, "chat", "localhost:9092")
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			defer streaming.Close()
+			defer producer.Close()
 			var wg sync.WaitGroup
 			wg.Add(1)
-			err = streaming.SendMessage(ctx, &types.Message{
+			err = producer.Produce(ctx, &types.Message{
 				Content:  message,
 				SenderID: state.Id,
 			}, &wg)

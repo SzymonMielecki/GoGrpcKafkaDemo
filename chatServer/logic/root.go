@@ -5,16 +5,16 @@ import (
 	"sync"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/chatServer/persistance"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/client"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/consumer"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
 )
 
 type Server struct {
 	db     *persistance.DB
-	client *client.StreamingClient
+	client *consumer.StreamingConsumer
 }
 
-func NewServer(db *persistance.DB, client *client.StreamingClient) *Server {
+func NewServer(db *persistance.DB, client *consumer.StreamingConsumer) *Server {
 	return &Server{db: db, client: client}
 }
 
