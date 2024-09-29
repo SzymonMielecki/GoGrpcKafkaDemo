@@ -6,14 +6,16 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/utils"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"github.com/spf13/cobra"
 )
 
-func RegisterCommand(username, email, password string) *cobra.Command {
+func RegisterCommand(username, email, password *string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "register",
 		Short: "Register to the chat application",
@@ -30,11 +32,11 @@ func RegisterCommand(username, email, password string) *cobra.Command {
 			defer client.Close()
 
 			hasher := sha256.New()
-			hasher.Write([]byte(password))
+			hasher.Write([]byte(*password))
 			passwordHash := hex.EncodeToString(hasher.Sum(nil))
 			user := &pb.RegisterUserRequest{
-				Username:     username,
-				Email:        email,
+				Username:     *username,
+				Email:        *email,
 				PasswordHash: passwordHash,
 			}
 			response, err := client.RegisterUser(ctx, user)
@@ -45,11 +47,18 @@ func RegisterCommand(username, email, password string) *cobra.Command {
 			state := loginState.NewLoginState(
 				response.Success,
 				uint(response.User.Id),
-				username,
-				email,
+				*username,
+				*email,
 				passwordHash,
 			)
-			defer state.Save()
+			state.Save()
+			tagline := strings.Split(*email, "@")[0]
+			color := utils.GetColorForUser(*username)
+			if response.Success {
+				fmt.Printf("Successfully registered as \033[%dm%s@%s\033[0m\n", color, *username, tagline)
+			} else {
+				fmt.Printf("\033[1;31mRegistration failed: %s\033[0m\n", response.Message)
+			}
 		},
 	}
 }

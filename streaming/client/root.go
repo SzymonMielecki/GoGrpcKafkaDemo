@@ -32,7 +32,7 @@ func NewStreamingClient(ctx context.Context, topic string, partition int, broker
 func (s *StreamingClient) Close() {
 	s.client.Close()
 }
-func (s *StreamingClient) ReceiveMessages(ctx context.Context, ch chan<- *types.StreamingMessage, wg *sync.WaitGroup) {
+func (s *StreamingClient) ReceiveMessages(ctx context.Context, ch chan<- *types.Message, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -44,7 +44,7 @@ func (s *StreamingClient) ReceiveMessages(ctx context.Context, ch chan<- *types.
 				log.Printf("fetch err topic %s partition %d: %v", t, p, err)
 			})
 			fetches.EachRecord(func(r *kgo.Record) {
-				msg := &types.StreamingMessage{}
+				msg := &types.Message{}
 				err := json.Unmarshal(r.Value, msg)
 				if err != nil {
 					log.Printf("error unmarshalling message in streaming/root.go: %v", err)

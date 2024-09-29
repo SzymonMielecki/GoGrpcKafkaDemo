@@ -3,14 +3,17 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/utils"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/client"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
 	"github.com/spf13/cobra"
+	"gorm.io/gorm"
 )
 
 func ReaderCommand() *cobra.Command {
@@ -38,8 +41,7 @@ func ReaderCommand() *cobra.Command {
 			}
 			defer userServiceClient.Close()
 			response, err := userServiceClient.CheckUser(ctx, &pb.CheckUserRequest{
-				Username:     state.Username,
-				Email:        state.Email,
+				Id:           uint32(state.Id),
 				PasswordHash: state.PasswordHash,
 			})
 			if err != nil {
@@ -52,7 +54,16 @@ func ReaderCommand() *cobra.Command {
 				cancel()
 				return
 			}
-			fmt.Println("Logged in as", state.Username)
+			user := &types.User{
+				Model: gorm.Model{
+					ID: uint(response.User.Id),
+				},
+				Username: response.User.Username,
+				Email:    response.User.Email,
+			}
+			tagline := strings.Split(user.Email, "@")[0]
+			color := utils.GetColorForUser(user.Username)
+			fmt.Printf("Logged in as \033[%dm%s@%s\033[0m\n", color, user.Username, tagline)
 			streaming, err := client.NewStreamingClient(ctx, "chat", 1, []string{"localhost:9092"})
 			if err != nil {
 				fmt.Printf("\033[1;31mFailed to create streaming client in client/cmd/reader.go: \n%v\033[0m", err)
@@ -60,7 +71,7 @@ func ReaderCommand() *cobra.Command {
 				return
 			}
 			defer streaming.Close()
-			ch := make(chan *types.StreamingMessage)
+			ch := make(chan *types.Message)
 			var wg sync.WaitGroup
 
 			wg.Add(1)
@@ -77,7 +88,14 @@ func ReaderCommand() *cobra.Command {
 						cancel()
 						return
 					case msg := <-ch:
-						fmt.Printf("\033[1;32m%d:\033[0m %s", msg.SenderID, msg.Content)
+						sender, err := userServiceClient.GetUser(ctx, &pb.GetUserRequest{
+							Id: uint32(msg.SenderID)})
+						if err != nil {
+							fmt.Printf("\033[1;31mFailed to get user in client/cmd/reader.go: \n%v\033[0m", err)
+						}
+						tagline := strings.Split(sender.User.Email, "@")[0]
+						color := utils.GetColorForUser(sender.User.Username)
+						fmt.Printf("\033[%dm%s@%s:\033[0m %s\n", color, sender.User.Username, tagline, msg.Content)
 					}
 				}
 			}()

@@ -12,8 +12,7 @@ import (
 )
 
 type StreamingProducer struct {
-	client    *kgo.Client
-	partition int
+	client *kgo.Client
 }
 
 func NewStreamingProducer(ctx context.Context, topic string, partition int, brokers []string) (*StreamingProducer, error) {
@@ -32,7 +31,7 @@ func (s *StreamingProducer) Close() {
 	s.client.Close()
 }
 
-func (s *StreamingProducer) SendMessage(ctx context.Context, message *types.StreamingMessage, wg *sync.WaitGroup) error {
+func (s *StreamingProducer) SendMessage(ctx context.Context, message *types.Message, wg *sync.WaitGroup) error {
 	json, err := json.Marshal(message)
 	if err != nil {
 		return err
