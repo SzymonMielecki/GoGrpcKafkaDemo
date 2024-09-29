@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/utils"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/producer"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
@@ -56,11 +58,12 @@ func WriterCommand() *cobra.Command {
 				Model: gorm.Model{
 					ID: uint(response.User.Id),
 				},
-				Username:     response.User.Username,
-				Email:        response.User.Email,
-				PasswordHash: response.User.PasswordHash,
+				Username: response.User.Username,
+				Email:    response.User.Email,
 			}
-			fmt.Println("Logged in as", user.Username)
+			tagline := strings.Split(user.Email, "@")[0]
+			color := utils.GetColorForUser(user.Username)
+			fmt.Printf("Logged in as \033[%dm%s@%s\033[0m\n", color, user.Username, tagline)
 			fmt.Println("Enter your message:")
 			reader := bufio.NewReader(os.Stdin)
 			message, err := reader.ReadString('\n')

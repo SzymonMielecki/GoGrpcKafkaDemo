@@ -15,6 +15,21 @@ services:
             timeout: 5s
             retries: 5
             start_period: 1s
+    redis:
+        image: redis:latest
+        restart: always
+        ports:
+        - "6379:6379"
+        environment:
+        - REDIS_PASSWORD=redisPass
+        - REDIS_PORT=6379
+        - REDIS_DATABASES=16
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 1s
+            timeout: 5s
+            retries: 5
+            start_period: 1s
 
     users_server:
         build:
@@ -28,10 +43,15 @@ services:
             DB_USER: postgres
             DB_PASSWORD: chatAppPass
             DB_NAME: postgres
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+            REDIS_PASSWORD: redisPass
         depends_on:
             users_db:
                 condition: service_healthy
             kafka:
+                condition: service_healthy
+            redis:
                 condition: service_healthy
 
     zookeeper:
@@ -61,7 +81,7 @@ services:
                 condition: service_healthy
         healthcheck:
             test: nc -z localhost 9092 || exit -1
-            start_period: 15s
+            start_period: 1s
             interval: 1s
             timeout: 1s
             retries: 5

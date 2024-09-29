@@ -3,10 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
+	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/utils"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/client"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
@@ -57,8 +59,11 @@ func ReaderCommand() *cobra.Command {
 					ID: uint(response.User.Id),
 				},
 				Username: response.User.Username,
+				Email:    response.User.Email,
 			}
-			fmt.Printf("\033[1;32mLogged in as %s\033[0m\n", user.Username)
+			tagline := strings.Split(user.Email, "@")[0]
+			color := utils.GetColorForUser(user.Username)
+			fmt.Printf("Logged in as \033[%dm%s@%s\033[0m\n", color, user.Username, tagline)
 			streaming, err := client.NewStreamingClient(ctx, "chat", 1, []string{"localhost:9092"})
 			if err != nil {
 				fmt.Printf("\033[1;31mFailed to create streaming client in client/cmd/reader.go: \n%v\033[0m", err)
@@ -88,13 +93,15 @@ func ReaderCommand() *cobra.Command {
 						if err != nil {
 							fmt.Printf("\033[1;31mFailed to get user in client/cmd/reader.go: \n%v\033[0m", err)
 						}
-						fmt.Printf("\033[1;32m%s:\033[0m %s", sender.User.Username, msg.Content)
+						tagline := strings.Split(sender.User.Email, "@")[0]
+						color := utils.GetColorForUser(sender.User.Username)
+						fmt.Printf("\033[%dm%s@%s:\033[0m %s\n", color, sender.User.Username, tagline, msg.Content)
 					}
 				}
 			}()
 			fmt.Println("The chat is running, press Ctrl+C to stop")
-			cancel()
 			wg.Wait()
+			cancel()
 		},
 	}
 

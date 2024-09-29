@@ -70,7 +70,6 @@ func LoadState(ctx context.Context) (*LoginState, error) {
 		s.Id = uint(response.User.Id)
 		return s, nil
 	}
-	fmt.Println("User not found")
 	return nil, fmt.Errorf("user not found")
 }
 

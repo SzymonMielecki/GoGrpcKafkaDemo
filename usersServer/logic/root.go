@@ -2,24 +2,49 @@ package logic
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersServer/persistance"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
+	"github.com/go-redis/cache/v9"
 )
 
 type Server struct {
 	pb.UnimplementedUsersServiceServer
 	db *persistance.DB
+	c  *cache.Cache
 }
 
-func NewServer(db *persistance.DB) *Server {
-	return &Server{db: db}
+func NewServer(db *persistance.DB, c *cache.Cache) *Server {
+	return &Server{db: db, c: c}
 }
 
 func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
-	found_username, username_err := s.db.GetUserByUsername(in.Username)
-	found_email, email_err := s.db.GetUserByEmail(in.Email)
+	var found_username *types.User
+	username_err := s.c.Once(&cache.Item{
+		Key:   "username:" + in.Username,
+		Value: &found_username,
+		Do: func(i *cache.Item) (interface{}, error) {
+			u, err := s.db.GetUserByUsername(in.Username)
+			if err != nil {
+				return nil, err
+			}
+			return u, nil
+		},
+	})
+	var found_email *types.User
+	email_err := s.c.Once(&cache.Item{
+		Key:   "email:" + in.Email,
+		Value: &found_email,
+		Do: func(i *cache.Item) (interface{}, error) {
+			u, err := s.db.GetUserByEmail(in.Email)
+			if err != nil {
+				return nil, err
+			}
+			return u, nil
+		},
+	})
 	if username_err != nil && email_err != nil {
 		return &pb.LoginUserResponse{
 			Success: false,
@@ -49,7 +74,18 @@ func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.Lo
 }
 
 func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
-	user_from_username, _ := s.db.GetUserByUsername(in.Username)
+	var user_from_username *types.User
+	_ = s.c.Once(&cache.Item{
+		Key:   "username:" + in.Username,
+		Value: &user_from_username,
+		Do: func(i *cache.Item) (interface{}, error) {
+			u, err := s.db.GetUserByUsername(in.Username)
+			if err != nil {
+				return nil, err
+			}
+			return u, nil
+		},
+	})
 	if user_from_username != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
@@ -57,7 +93,18 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 			Message: "Username already exists",
 		}, nil
 	}
-	user_from_email, _ := s.db.GetUserByEmail(in.Email)
+	var user_from_email *types.User
+	_ = s.c.Once(&cache.Item{
+		Key:   "email:" + in.Email,
+		Value: &user_from_email,
+		Do: func(i *cache.Item) (interface{}, error) {
+			u, err := s.db.GetUserByEmail(in.Email)
+			if err != nil {
+				return nil, err
+			}
+			return u, nil
+		},
+	})
 	if user_from_email != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
@@ -85,7 +132,18 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 }
 
 func (s *Server) GetUser(ctx context.Context, in *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	user, err := s.db.GetUserById(uint(in.Id))
+	var user *types.User
+	err := s.c.Once(&cache.Item{
+		Key:   "id:" + strconv.Itoa(int(in.Id)),
+		Value: &user,
+		Do: func(i *cache.Item) (interface{}, error) {
+			u, err := s.db.GetUserById(uint(in.Id))
+			if err != nil {
+				return nil, err
+			}
+			return u, nil
+		},
+	})
 	if err != nil {
 		return &pb.GetUserResponse{
 			Success: false,
@@ -101,7 +159,18 @@ func (s *Server) GetUser(ctx context.Context, in *pb.GetUserRequest) (*pb.GetUse
 }
 
 func (s *Server) CheckUser(ctx context.Context, in *pb.CheckUserRequest) (*pb.CheckUserResponse, error) {
-	user, err := s.db.GetUserById(uint(in.Id))
+	var user *types.User
+	err := s.c.Once(&cache.Item{
+		Key:   "ID:" + strconv.Itoa(int(in.Id)),
+		Value: &user,
+		Do: func(i *cache.Item) (interface{}, error) {
+			u, err := s.db.GetUserById(uint(in.Id))
+			if err != nil {
+				return nil, err
+			}
+			return u, nil
+		},
+	})
 	if err != nil {
 		return &pb.CheckUserResponse{
 			Success: false,

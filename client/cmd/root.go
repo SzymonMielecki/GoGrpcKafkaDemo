@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
 	"github.com/spf13/cobra"
@@ -17,15 +16,11 @@ func RootCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx, cancel := context.WithCancel(context.Background())
 			state, err := loginState.LoadState(ctx)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
 			fmt.Println("Welcome to ChatUp!")
-			if state.LoggedIn {
-				fmt.Println("You are logged in")
-			} else {
+			if !state.LoggedIn || err != nil {
 				fmt.Println("You are not logged in")
+			} else {
+				fmt.Println("You are logged in")
 			}
 			fmt.Println("For a list of commands, type 'help'")
 			cancel()
