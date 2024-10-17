@@ -1,4 +1,4 @@
-services:
+ services:
     users_db:
         image: postgres:latest
         ports:
@@ -7,8 +7,6 @@ services:
             POSTGRES_PASSWORD: chatAppPass
             POSTGRES_USER: postgres
             POSTGRES_DB: postgres
-        volumes:
-            - pgdata_users:/var/lib/postgresql/data
         healthcheck:
             test: ["CMD", "pg_isready", "-d", "postgres", "-U", "postgres"]
             interval: 1s
@@ -35,7 +33,7 @@ services:
     users_server:
         build:
             context: .
-            dockerfile: user_server.Dockerfile
+            dockerfile: users_server.Dockerfile
         ports:
             - "50051:50051"
         environment:
@@ -93,8 +91,6 @@ services:
             POSTGRES_PASSWORD: chatAppPass
             POSTGRES_USER: postgres
             POSTGRES_DB: postgres
-        volumes:
-            - pgdata_chat:/var/lib/postgresql/data
         healthcheck:
             test: ["CMD", "pg_isready", "-d", "postgres", "-U", "postgres"]
             interval: 1s
@@ -118,7 +114,3 @@ services:
                 condition: service_healthy
             chat_db:
                 condition: service_healthy
-
-volumes:
-    pgdata_users:
-    pgdata_chat:
