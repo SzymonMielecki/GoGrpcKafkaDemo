@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/cmd"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/logs"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/client/cmd"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/client/logs"
 )
 
 func Execute() {

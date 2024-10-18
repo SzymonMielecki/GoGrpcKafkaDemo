@@ -4,9 +4,9 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersServer/persistance"
-	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/usersServer/persistance"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaDemo/usersService"
 	"github.com/go-redis/cache/v9"
 )
 

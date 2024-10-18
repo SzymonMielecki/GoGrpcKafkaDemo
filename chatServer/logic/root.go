@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/chatServer/persistance"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/client"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/chatServer/persistance"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/streaming/client"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
 )
 
 type Server struct {

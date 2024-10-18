@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/chatServer/logic"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/chatServer/persistance"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/client"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/chatServer/logic"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/chatServer/persistance"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/streaming/client"
 )
 
 func main() {

@@ -6,9 +6,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersServer/logic"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersServer/persistance"
-	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/usersServer/logic"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/usersServer/persistance"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaDemo/usersService"
 	"github.com/go-redis/cache/v9"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"

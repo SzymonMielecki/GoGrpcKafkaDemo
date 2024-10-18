@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/client/loginState"
 	"github.com/spf13/cobra"
 )
 

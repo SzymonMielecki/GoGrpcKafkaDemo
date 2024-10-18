@@ -1,4 +1,4 @@
-module github.com/SzymonMielecki/GoGrpcKafkaGormDemo
+module github.com/SzymonMielecki/GoGrpcKafkaDemo
 
 go 1.22.0
 

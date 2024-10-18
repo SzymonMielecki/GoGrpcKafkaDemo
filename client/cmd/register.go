@@ -8,10 +8,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/utils"
-	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/client/loginState"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/client/userServiceClient"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/client/utils"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaDemo/usersService"
 	"github.com/spf13/cobra"
 )
 

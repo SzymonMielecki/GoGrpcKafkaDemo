@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaDemo/usersService"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

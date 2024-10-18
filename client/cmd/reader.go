@@ -6,12 +6,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/loginState"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/userServiceClient"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/client/utils"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/streaming/client"
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
-	pb "github.com/SzymonMielecki/GoGrpcKafkaGormDemo/usersService"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/client/loginState"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/client/userServiceClient"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/client/utils"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/streaming/client"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
+	pb "github.com/SzymonMielecki/GoGrpcKafkaDemo/usersService"
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
 )

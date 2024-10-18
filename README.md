@@ -1,4 +1,4 @@
-# ChatUp - GoGrpcKafkaGormDemo
+# ChatUp - GoGrpcKafkaDemo
 
 This is a chat app based on microservices architecture.
 

@@ -7,7 +7,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaGormDemo/types"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
