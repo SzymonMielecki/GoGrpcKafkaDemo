@@ -15,15 +15,15 @@ func RootCommand() *cobra.Command {
 		Long:  `ChatUp is a real-time chat application based on Kafka and gRPC`,
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
 			state, err := loginState.LoadState(ctx)
 			fmt.Println("Welcome to ChatUp!")
-			if !state.LoggedIn || err != nil {
+			if err != nil || !state.LoggedIn {
 				fmt.Println("You are not logged in")
 			} else {
 				fmt.Println("You are logged in")
 			}
 			fmt.Println("For a list of commands, type 'help'")
-			cancel()
 		},
 	}
 }

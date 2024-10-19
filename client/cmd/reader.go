@@ -23,20 +23,18 @@ func ReaderCommand() *cobra.Command {
 		Long:  `Reads messages from the chat, you need to be logged in to use this command`,
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
 			state, err := loginState.LoadState(ctx)
 			if err != nil {
-				cancel()
 				return
 			}
 			if !state.LoggedIn {
 				fmt.Printf("\033[1;31mYou need to be logged in to use this command\033[0m\n")
-				cancel()
 				return
 			}
 			userServiceClient, err := userServiceClient.NewUserServiceClient()
 			if err != nil {
 				fmt.Printf("\033[1;31mFailed to create user service client in client/cmd/reader.go: \n%v\033[0m", err)
-				cancel()
 				return
 			}
 			defer userServiceClient.Close()
@@ -46,12 +44,10 @@ func ReaderCommand() *cobra.Command {
 			})
 			if err != nil {
 				fmt.Printf("\033[1;31mFailed to check user in client/cmd/reader.go: \n%v\033[0m", err)
-				cancel()
 				return
 			}
 			if !response.Success {
 				fmt.Printf("\033[1;31mNot logged in\033[0m")
-				cancel()
 				return
 			}
 			user := &types.User{
@@ -85,7 +81,6 @@ func ReaderCommand() *cobra.Command {
 					select {
 					case <-ctx.Done():
 						wg.Done()
-						cancel()
 						return
 					case msg := <-ch:
 						sender, err := userServiceClient.GetUser(ctx, &pb.GetUserRequest{

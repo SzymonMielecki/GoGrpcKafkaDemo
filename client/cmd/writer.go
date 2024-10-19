@@ -93,5 +93,4 @@ func WriterCommand() *cobra.Command {
 			cancel()
 		},
 	}
-
 }
