@@ -49,7 +49,7 @@ func LoadState(ctx context.Context) (*LoginState, error) {
 		return nil, err
 	}
 	if !s.LoggedIn {
-		return s, fmt.Errorf("you need to be logged in to use this command")
+		return s, nil
 	}
 
 	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -71,6 +71,13 @@ func LoadState(ctx context.Context) (*LoginState, error) {
 		return s, nil
 	}
 	return nil, fmt.Errorf("user not found")
+}
+
+func (s *LoginState) Clear() error {
+	s.LoggedIn = false
+	s.Id = 0
+	s.PasswordHash = ""
+	return s.Save()
 }
 
 func NewLoginState(

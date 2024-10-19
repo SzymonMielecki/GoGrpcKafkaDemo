@@ -17,6 +17,7 @@ func Execute() {
 	RegisterCmd := cmd.RegisterCommand(&username, &email, &password)
 	LoginCmd := cmd.LoginCommand(&username, &email, &password)
 	WriterCmd := cmd.WriterCommand()
+	ClearCmd := cmd.ClearCommand()
 
 	LoginCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
 	LoginCmd.Flags().StringVarP(&email, "email", "e", "", "Email")
@@ -36,6 +37,7 @@ func Execute() {
 	RootCmd.AddCommand(RegisterCmd)
 	RootCmd.AddCommand(WriterCmd)
 	RootCmd.AddCommand(ReaderCmd)
+	RootCmd.AddCommand(ClearCmd)
 
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
