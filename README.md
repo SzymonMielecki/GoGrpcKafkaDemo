@@ -9,7 +9,7 @@ This is a chat app based on microservices architecture.
 -   [x] gRPC
 -   [x] Kafka
 -   [x] PostgresQl
--   [x] gORM
+-   [x] ~~gORM~~ sqlc
 -   [x] Redis
 
 ## Usage Details

@@ -13,7 +13,6 @@ import (
 	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaDemo/usersService"
 	"github.com/spf13/cobra"
-	"gorm.io/gorm"
 )
 
 func ReaderCommand() *cobra.Command {
@@ -51,9 +50,6 @@ func ReaderCommand() *cobra.Command {
 				return
 			}
 			user := &types.User{
-				Model: gorm.Model{
-					ID: uint(response.User.Id),
-				},
 				Username: response.User.Username,
 				Email:    response.User.Email,
 			}

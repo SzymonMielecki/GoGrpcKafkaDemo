@@ -1,0 +1,6 @@
+CREATE TABLE Users (
+  Id INT PRIMARY KEY,
+  Email TEXT UNIQUE NOT NULL,
+  Username TEXT UNIQUE NOT NULL,
+  PasswordHash TEXT NOT NULL
+);

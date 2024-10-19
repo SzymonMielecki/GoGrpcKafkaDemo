@@ -1,85 +1,119 @@
 package persistance
 
 import (
+	"context"
+
 	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/usersServer/persistance/queries"
+	"github.com/jackc/pgx/v5"
 )
 
 type DB struct {
-	*gorm.DB
+	*queries.Queries
 }
 
 func NewDB(host, user, password, dbname, port string) (*DB, error) {
+	ctx := context.Background()
 	dsn := "host=" + host + " user=" + user + " password=" + password + " dbname=" + dbname + " port=" + port + " sslmode=disable TimeZone=Europe/Warsaw"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
-	err = db.AutoMigrate(&types.User{})
-	if err != nil {
-		return nil, err
-	}
-	return &DB{db}, nil
+	queries := queries.New(conn)
+	return &DB{Queries: queries}, nil
 }
 
 func (db *DB) CreateUser(user *types.User) (*types.User, error) {
-	err := db.DB.Create(user).Error
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	u, err := db.Queries.CreateUser(ctx, queries.CreateUserParams{
+		Username:     user.Username,
+		Email:        user.Email,
+		Passwordhash: user.PasswordHash,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	return &types.User{
+		ID:           uint(u.ID),
+		Username:     u.Username,
+		Email:        u.Email,
+		PasswordHash: u.Passwordhash,
+	}, nil
 }
 
 func (db *DB) GetUserById(id uint) (*types.User, error) {
-	var user types.User
-
-	err := db.DB.Model(&types.User{
-		Model: gorm.Model{
-			ID: id,
-		},
-	}).First(&user).Error
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	u, err := db.Queries.GetUserById(ctx, int32(id))
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &types.User{
+		ID:           uint(u.ID),
+		Username:     u.Username,
+		Email:        u.Email,
+		PasswordHash: u.Passwordhash,
+	}, nil
 }
-
 func (db *DB) GetUserByEmail(email string) (*types.User, error) {
-	var user types.User
-	err := db.DB.Model(&types.User{}).Where("email = ?", email).First(&user).Error
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	u, err := db.Queries.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &types.User{
+		ID:           uint(u.ID),
+		Username:     u.Username,
+		Email:        u.Email,
+		PasswordHash: u.Passwordhash,
+	}, nil
 }
 
 func (db *DB) GetUserByUsername(username string) (*types.User, error) {
-	var user types.User
-	err := db.DB.Model(&types.User{}).Where("username = ?", username).First(&user).Error
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	u, err := db.Queries.GetUserByUsername(ctx, username)
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &types.User{
+		ID:           uint(u.ID),
+		Username:     u.Username,
+		Email:        u.Email,
+		PasswordHash: u.Passwordhash,
+	}, nil
 }
 
 func (db *DB) GetUserByUsernameAndEmail(username, email string) (*types.User, error) {
-	var user types.User
-	err := db.DB.Model(&types.User{}).Where("username = ? AND email = ?", username, email).First(&user).Error
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	u, err := db.Queries.GetUserByUsernameAndEmail(ctx, queries.GetUserByUsernameAndEmailParams{
+		Username: username,
+		Email:    email,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &types.User{
+		ID:           uint(u.ID),
+		Username:     u.Username,
+		Email:        u.Email,
+		PasswordHash: u.Passwordhash,
+	}, nil
 }
 
 func (db *DB) UsernameExists(username string) bool {
-	var user types.User
-	err := db.DB.Model(&types.User{}).Where("username = ?", username).First(&user).Error
-	return err == nil
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	b, err := db.Queries.UsernameExists(ctx, username)
+	return err != nil && b
 }
 
 func (db *DB) EmailExists(email string) bool {
-	var user types.User
-	err := db.DB.Model(&types.User{}).Where("email = ?", email).First(&user).Error
-	return err == nil
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	b, err := db.Queries.EmailExists(ctx, email)
+	return err != nil && b
 }

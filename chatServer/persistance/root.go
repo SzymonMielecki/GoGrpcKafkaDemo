@@ -25,7 +25,9 @@ func NewDB(host, user, password, dbname, port string) (*DB, error) {
 }
 
 func (db *DB) CreateMessage(message *types.Message) (*types.Message, error) {
-	db.Queries.CreateMessage(context.Background(), queries.CreateMessageParams{
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	db.Queries.CreateMessage(ctx, queries.CreateMessageParams{
 		Content:  message.Content,
 		Senderid: pgtype.Int4{Int32: int32(message.SenderID), Valid: true},
 	})

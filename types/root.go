@@ -2,19 +2,18 @@ package types
 
 import (
 	pb "github.com/SzymonMielecki/GoGrpcKafkaDemo/usersService"
-	"gorm.io/gorm"
 )
 
 type User struct {
-	gorm.Model
-	Username     string `gorm:"unique"`
-	Email        string `gorm:"unique"`
+	ID           uint
+	Username     string
+	Email        string
 	PasswordHash string
 }
 
 func (u *User) ToProto() *pb.User {
 	return &pb.User{
-		Id:           uint32(u.Model.ID),
+		Id:           uint32(u.ID),
 		Username:     u.Username,
 		Email:        u.Email,
 		PasswordHash: u.PasswordHash,
@@ -22,7 +21,7 @@ func (u *User) ToProto() *pb.User {
 }
 
 type Message struct {
-	gorm.Model
+	ID       uint
 	Content  string
 	SenderID uint
 }
