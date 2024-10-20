@@ -2,4 +2,5 @@
 !/**/
 !*.*
 .env
-/init-scripts
+/.init-scripts
+.file_hashes.txt

@@ -1,10 +1,10 @@
 #!/bin/bash
 
 USERS_INPUT_FILE="usersServer/schema.sql"
-USERS_OUTPUT_FILE="init-scripts/init-users-db.sql"
+USERS_OUTPUT_FILE=".init-scripts/init-users-db.sql"
 
 CHAT_INPUT_FILE="chatServer/schema.sql"
-CHAT_OUTPUT_FILE="init-scripts/init-chat-db.sql"
+CHAT_OUTPUT_FILE=".init-scripts/init-chat-db.sql"
 
 mkdir -p init-scripts
 
@@ -23,8 +23,9 @@ process_schema() {
     echo "Schema has been copied and modified to $output_file"
 }
 
-process_schema "$USERS_INPUT_FILE" "$USERS_OUTPUT_FILE"
+go build -o chatUp client/main.go
 
+process_schema "$USERS_INPUT_FILE" "$USERS_OUTPUT_FILE"
 process_schema "$CHAT_INPUT_FILE" "$CHAT_OUTPUT_FILE"
 
-docker compose up --build
+docker-compose up --build
