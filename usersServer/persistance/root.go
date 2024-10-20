@@ -10,8 +10,8 @@ import (
 )
 
 type DB struct {
-	Queries *queries.Queries
-	Conn    *pgx.Conn
+	*queries.Queries
+	*pgx.Conn
 }
 
 func NewDB(host, user, password, dbname, port string) (*DB, error) {
@@ -23,7 +23,7 @@ func NewDB(host, user, password, dbname, port string) (*DB, error) {
 		return nil, err
 	}
 	queries := queries.New(conn)
-	return &DB{Queries: queries, Conn: conn}, nil
+	return &DB{queries, conn}, nil
 }
 
 func (db *DB) Close() {

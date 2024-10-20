@@ -18,6 +18,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to database in chatServer/main.go: \n%v", err)
 	}
+	defer db.Close()
 	streaming, err := client.NewStreamingClient(ctx, "chat", 0, []string{"kafka:9092"})
 	if err != nil {
 		log.Fatalf("failed to create streaming in chatServer/main.go: \n%v", err)

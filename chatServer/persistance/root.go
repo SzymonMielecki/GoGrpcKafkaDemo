@@ -11,6 +11,7 @@ import (
 
 type DB struct {
 	*queries.Queries
+	*pgx.Conn
 }
 
 func NewDB(host, user, password, dbname, port string) (*DB, error) {
@@ -21,7 +22,11 @@ func NewDB(host, user, password, dbname, port string) (*DB, error) {
 		return nil, err
 	}
 	queries := queries.New(conn)
-	return &DB{queries}, nil
+	return &DB{queries, conn}, nil
+}
+
+func (db *DB) Close() {
+	db.Conn.Close(context.Background())
 }
 
 func (db *DB) CreateMessage(message *types.Message) (*types.Message, error) {
