@@ -1,0 +1,16 @@
+version: "2"
+cloud:
+  project: '01JAJ0NAWVG9CP0V56V4FAFQ5J'
+servers:
+  - engine: postgresql
+    uri: ${USERS_DB_URI}
+sql:
+  - name: "usersDb"
+    engine: "postgresql"
+    queries: "query.sql"
+    schema: "schema.sql"
+    gen:
+      go:
+        package: "queries"
+        out: "persistance/queries"
+        sql_package: "pgx/v5"

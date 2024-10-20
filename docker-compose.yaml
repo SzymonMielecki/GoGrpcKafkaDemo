@@ -8,7 +8,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
     volumes:
-      - chat-db-data:/var/lib/postgresql/data
+      - users-db-data:/var/lib/postgresql/data
+      - ./.init-scripts/init-users-db.sql:/docker-entrypoint-initdb.d/init-users-db.sql
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "postgres", "-U", "postgres"]
       interval: 1s
@@ -102,6 +103,9 @@ services:
       POSTGRES_PASSWORD: chatAppPass
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
+    volumes:
+      - chat-db-data:/var/lib/postgresql/data
+      - ./.init-scripts/init-chat-db.sql:/docker-entrypoint-initdb.d/init-chat-db.sql
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "postgres", "-U", "postgres"]
       interval: 1s
@@ -127,3 +131,4 @@ services:
         condition: service_healthy
 volumes:
   chat-db-data:
+  users-db-data:

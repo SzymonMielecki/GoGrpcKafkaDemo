@@ -1,31 +1,40 @@
 package persistance
 
 import (
+	"context"
+
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/chatServer/persistance/queries"
 	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type DB struct {
-	*gorm.DB
+	*queries.Queries
+	*pgx.Conn
 }
 
 func NewDB(host, user, password, dbname, port string) (*DB, error) {
+	ctx := context.Background()
 	dsn := "host=" + host + " user=" + user + " password=" + password + " dbname=" + dbname + " port=" + port + " sslmode=disable TimeZone=Europe/Warsaw"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
-	err = db.AutoMigrate(&types.User{})
-	if err != nil {
-		return nil, err
-	}
-	return &DB{db}, nil
+	queries := queries.New(conn)
+	return &DB{queries, conn}, nil
+}
+
+func (db *DB) Close() {
+	db.Conn.Close(context.Background())
 }
 
 func (db *DB) CreateMessage(message *types.Message) (*types.Message, error) {
-	if err := db.DB.Create(&message).Error; err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	db.Queries.CreateMessage(ctx, queries.CreateMessageParams{
+		Content:  message.Content,
+		Senderid: pgtype.Int4{Int32: int32(message.SenderID), Valid: true},
+	})
 	return message, nil
 }
