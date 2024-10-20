@@ -1,2 +1,2 @@
 -- name: CreateMessage :exec
-INSERT INTO messages (Content, SenderId) VALUES ($1, $2);
+INSERT INTO Messages (Content, SenderId) VALUES ($1, $2);
