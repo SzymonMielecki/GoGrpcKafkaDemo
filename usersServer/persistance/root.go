@@ -2,6 +2,7 @@ package persistance
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
 	"github.com/SzymonMielecki/GoGrpcKafkaDemo/usersServer/persistance/queries"
@@ -9,18 +10,24 @@ import (
 )
 
 type DB struct {
-	*queries.Queries
+	Queries *queries.Queries
+	Conn    *pgx.Conn
 }
 
 func NewDB(host, user, password, dbname, port string) (*DB, error) {
 	ctx := context.Background()
-	dsn := "host=" + host + " user=" + user + " password=" + password + " dbname=" + dbname + " port=" + port + " sslmode=disable TimeZone=Europe/Warsaw"
-	conn, err := pgx.Connect(ctx, dsn)
+	url := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", user, password, host, port, dbname)
+	fmt.Println(url)
+	conn, err := pgx.Connect(ctx, url)
 	if err != nil {
 		return nil, err
 	}
 	queries := queries.New(conn)
-	return &DB{Queries: queries}, nil
+	return &DB{Queries: queries, Conn: conn}, nil
+}
+
+func (db *DB) Close() {
+	db.Conn.Close(context.Background())
 }
 
 func (db *DB) CreateUser(user *types.User) (*types.User, error) {
@@ -45,6 +52,7 @@ func (db *DB) CreateUser(user *types.User) (*types.User, error) {
 func (db *DB) GetUserById(id uint) (*types.User, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	fmt.Println("ID: ", id)
 	u, err := db.Queries.GetUserById(ctx, int32(id))
 	if err != nil {
 		return nil, err

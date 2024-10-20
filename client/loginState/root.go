@@ -60,6 +60,7 @@ func LoadState(ctx context.Context) (*LoginState, error) {
 	defer conn.Close()
 	c := pb.NewUsersServiceClient(conn)
 	response, err := c.CheckUser(ctx, &pb.CheckUserRequest{
+		Id:           uint32(s.Id),
 		PasswordHash: s.PasswordHash,
 	})
 	if err != nil {

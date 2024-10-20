@@ -20,6 +20,10 @@ func NewServer(db *persistance.DB, c *cache.Cache) *Server {
 	return &Server{db: db, c: c}
 }
 
+func (s *Server) Close() {
+	s.db.Close()
+}
+
 func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
 	var found_username *types.User
 	username_err := s.c.Once(&cache.Item{

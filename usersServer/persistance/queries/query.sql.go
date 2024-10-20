@@ -11,8 +11,8 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO
-    Users (Username, Email, PasswordHash)
-VALUES ($1, $2, $3) RETURNING id, email, username, passwordhash
+    users (Username, Email, PasswordHash)
+VALUES ($1, $2, $3) RETURNING id, username, email, passwordhash
 `
 
 type CreateUserParams struct {
@@ -26,15 +26,15 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Username,
+		&i.Email,
 		&i.Passwordhash,
 	)
 	return i, err
 }
 
 const emailExists = `-- name: EmailExists :one
-SELECT EXISTS ( SELECT 1 FROM Users WHERE Email = $1 )
+SELECT EXISTS ( SELECT 1 FROM users WHERE Email = $1 )
 `
 
 func (q *Queries) EmailExists(ctx context.Context, email string) (bool, error) {
@@ -45,7 +45,7 @@ func (q *Queries) EmailExists(ctx context.Context, email string) (bool, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, username, passwordhash FROM Users WHERE Email = $1
+SELECT id, username, email, passwordhash FROM users WHERE Email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -53,15 +53,15 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Username,
+		&i.Email,
 		&i.Passwordhash,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, email, username, passwordhash FROM Users WHERE Id = $1
+SELECT id, username, email, passwordhash FROM users WHERE Id = $1
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
@@ -69,15 +69,15 @@ func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Username,
+		&i.Email,
 		&i.Passwordhash,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, email, username, passwordhash FROM Users WHERE Username = $1
+SELECT id, username, email, passwordhash FROM users WHERE Username = $1
 `
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
@@ -85,15 +85,15 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Username,
+		&i.Email,
 		&i.Passwordhash,
 	)
 	return i, err
 }
 
 const getUserByUsernameAndEmail = `-- name: GetUserByUsernameAndEmail :one
-SELECT id, email, username, passwordhash FROM Users WHERE Username = $1 AND Email = $2
+SELECT id, username, email, passwordhash FROM users WHERE Username = $1 AND Email = $2
 `
 
 type GetUserByUsernameAndEmailParams struct {
@@ -106,15 +106,15 @@ func (q *Queries) GetUserByUsernameAndEmail(ctx context.Context, arg GetUserByUs
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Username,
+		&i.Email,
 		&i.Passwordhash,
 	)
 	return i, err
 }
 
 const getUserByUsernameAndPassword = `-- name: GetUserByUsernameAndPassword :one
-SELECT id, email, username, passwordhash FROM Users WHERE Username = $1 AND PasswordHash = $2
+SELECT id, username, email, passwordhash FROM users WHERE Username = $1 AND PasswordHash = $2
 `
 
 type GetUserByUsernameAndPasswordParams struct {
@@ -127,15 +127,15 @@ func (q *Queries) GetUserByUsernameAndPassword(ctx context.Context, arg GetUserB
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Username,
+		&i.Email,
 		&i.Passwordhash,
 	)
 	return i, err
 }
 
 const usernameExists = `-- name: UsernameExists :one
-SELECT EXISTS ( SELECT 1 FROM Users WHERE Username = $1 )
+SELECT EXISTS ( SELECT 1 FROM users WHERE Username = $1 )
 `
 
 func (q *Queries) UsernameExists(ctx context.Context, username string) (bool, error) {

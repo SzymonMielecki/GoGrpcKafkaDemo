@@ -6,7 +6,7 @@ package queries
 
 type User struct {
 	ID           int32
-	Email        string
 	Username     string
+	Email        string
 	Passwordhash string
 }

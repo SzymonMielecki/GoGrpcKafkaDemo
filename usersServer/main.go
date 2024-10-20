@@ -27,6 +27,7 @@ func main() {
 
 	s := grpc.NewServer()
 	logic := logic.NewServer(db, c)
+	defer logic.Close()
 	pb.RegisterUsersServiceServer(s, logic)
 	log.Printf("Server registered and ready to serve")
 	if err := s.Serve(lis); err != nil {
