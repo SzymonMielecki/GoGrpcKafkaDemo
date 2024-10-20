@@ -35,6 +35,7 @@ Usage:
   chatUp [command]
 
 Available Commands:
+  clear       Clears the current session
   completion  Generate the autocompletion script for the specified shell
   help        Help about any command
   login       Login to the chat application
