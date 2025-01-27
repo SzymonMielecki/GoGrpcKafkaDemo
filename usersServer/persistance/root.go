@@ -3,11 +3,22 @@ package persistance
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
 	"github.com/SzymonMielecki/GoGrpcKafkaDemo/usersServer/persistance/queries"
 	"github.com/jackc/pgx/v5"
 )
+
+type IDB[T any] interface {
+	io.Closer
+	CreateUser(user *T) (*T, error)
+	GetUserById(userId uint) (*T, error)
+	GetUserByUsername(username string) (*T, error)
+	GetUserByEmail(email string) (*T, error)
+	UsernameExists(username string) bool
+	EmailExists(email string) bool
+}
 
 type DB struct {
 	*queries.Queries
@@ -26,8 +37,8 @@ func NewDB(host, user, password, dbname, port string) (*DB, error) {
 	return &DB{queries, conn}, nil
 }
 
-func (db *DB) Close() {
-	db.Conn.Close(context.Background())
+func (db *DB) Close() error {
+	return db.Conn.Close(context.Background())
 }
 
 func (db *DB) CreateUser(user *types.User) (*types.User, error) {
