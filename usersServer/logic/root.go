@@ -4,70 +4,64 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/usersServer/cache"
 	"github.com/SzymonMielecki/GoGrpcKafkaDemo/usersServer/persistance"
+
+	"github.com/SzymonMielecki/GoGrpcKafkaDemo/types"
 	pb "github.com/SzymonMielecki/GoGrpcKafkaDemo/usersService"
-	"github.com/go-redis/cache/v9"
 )
 
 type Server struct {
 	pb.UnimplementedUsersServiceServer
-	db *persistance.DB
-	c  *cache.Cache
+	db persistance.IDB[types.User]
+	c  cache.ICache[types.User]
 }
 
-func NewServer(db *persistance.DB, c *cache.Cache) *Server {
+func NewServer(db persistance.IDB[types.User], c cache.ICache[types.User]) *Server {
 	return &Server{db: db, c: c}
 }
 
-func (s *Server) Close() {
-	s.db.Close()
+func (s *Server) Close() error {
+	return s.db.Close()
 }
 
 func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
-	var found_username *types.User
-	username_err := s.c.Once(&cache.Item{
-		Key:   "username:" + in.Username,
-		Value: &found_username,
-		Do: func(i *cache.Item) (interface{}, error) {
-			u, err := s.db.GetUserByUsername(in.Username)
-			if err != nil {
-				return nil, err
-			}
-			return u, nil
-		},
-	})
-	var found_email *types.User
-	email_err := s.c.Once(&cache.Item{
-		Key:   "email:" + in.Email,
-		Value: &found_email,
-		Do: func(i *cache.Item) (interface{}, error) {
+	foundUsername, usernameErr := s.c.Handle(
+		ctx,
+		"username:"+in.Username,
+		func() (*types.User, error) {
+			return s.db.GetUserByUsername(in.Username)
+		})
+	foundEmail, emailErr := s.c.Handle(
+		ctx,
+		"email:"+in.Email,
+		func() (*types.User, error) {
 			u, err := s.db.GetUserByEmail(in.Email)
 			if err != nil {
 				return nil, err
 			}
 			return u, nil
 		},
-	})
-	if username_err != nil && email_err != nil {
+	)
+	if usernameErr != nil && emailErr != nil {
 		return &pb.LoginUserResponse{
 			Success: false,
 			User:    &pb.User{},
 			Message: "User not found",
 		}, nil
 	}
-	if found_username != nil {
+	if foundUsername != nil {
 		return &pb.LoginUserResponse{
 			Success: true,
-			User:    found_username.ToProto(),
-			Message: "Logged in as " + found_username.Username,
+			User:    foundUsername.ToProto(),
+			Message: "Logged in as " + foundUsername.Username,
 		}, nil
 	}
-	if found_email != nil {
+	if foundEmail != nil {
 		return &pb.LoginUserResponse{
 			Success: true,
-			User:    found_email.ToProto(),
-			Message: "Logged in as " + found_email.Username,
+			User:    foundEmail.ToProto(),
+			Message: "Logged in as " + foundEmail.Username,
 		}, nil
 	}
 	return &pb.LoginUserResponse{
@@ -78,38 +72,36 @@ func (s *Server) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.Lo
 }
 
 func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
-	var user_from_username *types.User
-	_ = s.c.Once(&cache.Item{
-		Key:   "username:" + in.Username,
-		Value: &user_from_username,
-		Do: func(i *cache.Item) (interface{}, error) {
+	userFromUsername, _ := s.c.Handle(
+		ctx,
+		"username:"+in.Username,
+		func() (*types.User, error) {
 			u, err := s.db.GetUserByUsername(in.Username)
 			if err != nil {
 				return nil, err
 			}
 			return u, nil
 		},
-	})
-	if user_from_username != nil {
+	)
+	if userFromUsername != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
 			Message: "Username already exists",
 		}, nil
 	}
-	var user_from_email *types.User
-	_ = s.c.Once(&cache.Item{
-		Key:   "email:" + in.Email,
-		Value: &user_from_email,
-		Do: func(i *cache.Item) (interface{}, error) {
+	userFromEmail, _ := s.c.Handle(
+		ctx,
+		"email:"+in.Email,
+		func() (*types.User, error) {
 			u, err := s.db.GetUserByEmail(in.Email)
 			if err != nil {
 				return nil, err
 			}
 			return u, nil
 		},
-	})
-	if user_from_email != nil {
+	)
+	if userFromEmail != nil {
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
@@ -125,7 +117,7 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 		return &pb.RegisterUserResponse{
 			Success: false,
 			User:    &pb.User{},
-			Message: "Error creating user, " + err.Error(),
+			Message: "Error creating user",
 		}, nil
 	}
 	return &pb.RegisterUserResponse{
@@ -136,24 +128,23 @@ func (s *Server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 }
 
 func (s *Server) GetUser(ctx context.Context, in *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	var user *types.User
-	err := s.c.Once(&cache.Item{
-		Key:   "id:" + strconv.Itoa(int(in.Id)),
-		Value: &user,
-		Do: func(i *cache.Item) (interface{}, error) {
+	user, err := s.c.Handle(
+		ctx,
+		"id:"+strconv.Itoa(int(in.Id)),
+		func() (*types.User, error) {
 			u, err := s.db.GetUserById(uint(in.Id))
 			if err != nil {
 				return nil, err
 			}
 			return u, nil
 		},
-	})
+	)
 	if err != nil {
 		return &pb.GetUserResponse{
 			Success: false,
-			User:    nil,
+			User:    &pb.User{},
 			Message: "User not found",
-		}, err
+		}, nil
 	}
 	return &pb.GetUserResponse{
 		Success: true,
@@ -163,23 +154,29 @@ func (s *Server) GetUser(ctx context.Context, in *pb.GetUserRequest) (*pb.GetUse
 }
 
 func (s *Server) CheckUser(ctx context.Context, in *pb.CheckUserRequest) (*pb.CheckUserResponse, error) {
-	var user *types.User
-	err := s.c.Once(&cache.Item{
-		Key:   "ID:" + strconv.Itoa(int(in.Id)),
-		Value: &user,
-		Do: func(i *cache.Item) (interface{}, error) {
+	user, err := s.c.Handle(
+		ctx,
+		"ID:"+strconv.Itoa(int(in.Id)),
+		func() (*types.User, error) {
 			u, err := s.db.GetUserById(uint(in.Id))
 			if err != nil {
 				return nil, err
 			}
 			return u, nil
 		},
-	})
+	)
 	if err != nil {
 		return &pb.CheckUserResponse{
 			Success: false,
 			User:    &pb.User{},
-			Message: "User not found, error: " + err.Error(),
+			Message: "User not found",
+		}, nil
+	}
+	if user == nil {
+		return &pb.CheckUserResponse{
+			Success: false,
+			User:    &pb.User{},
+			Message: "User not found",
 		}, nil
 	}
 	if user.PasswordHash != in.PasswordHash {
